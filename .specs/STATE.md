@@ -49,3 +49,35 @@
 - **Scope**: publisher da outbox.
 - **Date**: 2026-11-03
 - **Status**: active
+
+### AD-007
+- **Decision**: Domínio e persistência separados por **record + mapper**: classes de domínio puras, `EntitySchema` sobre records de persistência, mappers `toDomain`/`applyToRecord`.
+- **Reason**: `rehydrate` é o único caminho de reconstrução; o domínio não conhece o ORM; o spike validou `numeric` → string → `bigint` no mapper.
+- **Trade-off**: mais código de mapeamento do que apontar o `EntitySchema` direto para a classe de domínio.
+- **Scope**: toda a persistência.
+- **Date**: 2026-11-03
+- **Status**: active
+
+### AD-008
+- **Decision**: Contratos validados com **Zod**, um schema por contrato, compartilhado pelo HTTP e pelo consumidor SQS.
+- **Reason**: mesmo use case, mesma validação; sem decorators; tipos inferidos.
+- **Trade-off**: foge do padrão `ValidationPipe` do Nest.
+- **Scope**: camada de entrada (HTTP e SQS).
+- **Date**: 2026-11-03
+- **Status**: active
+
+### AD-009
+- **Decision**: Migrations em **SQL manual** (`up`/`down`), lista explícita (`migrationsList`), `snapshot: false`, executadas por um serviço Compose `migrate` de execução única antes das réplicas.
+- **Reason**: índices parciais, triggers e CHECKs não saem de um diff de entidade; evita várias réplicas migrando ao mesmo tempo.
+- **Trade-off**: não há geração automática de migration.
+- **Scope**: schema e infraestrutura de execução.
+- **Date**: 2026-11-03
+- **Status**: active
+
+### AD-010
+- **Decision**: Chaves estrangeiras compostas: `wager_transactions (wallet_id, currency, player_id) → wallets (id, currency, player_id)` e `wallet_ledger_entries (wallet_id, currency) → wallets (id, currency)`. `WALLET_NOT_FOUND`, `WALLET_PLAYER_MISMATCH` e `CURRENCY_MISMATCH` viram 422 **sem persistir** a transação.
+- **Reason**: o schema impede transação ou lançamento com player ou moeda diferentes da wallet; rejeitar antes do INSERT é a única saída coerente com a constraint.
+- **Trade-off**: essas três rejeições não ficam como linha auditável; a evidência é log e métrica.
+- **Scope**: schema, `SubmitWagerTransaction`, contrato HTTP e SQS.
+- **Date**: 2026-11-03
+- **Status**: active
