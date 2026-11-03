@@ -51,7 +51,13 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | Política do worker de `PENDING_REFERENCE` | Backoff exponencial base 1 s, fator 2, teto 5 min, **máx. 10 tentativas** (~14 min no total); configurável por env. Esgotado → `REJECTED` `REFERENCE_NOT_FOUND` + evento `WagerTransactionRejected`. | Provedores enviam a referência em segundos/minutos; 14 min cobre atraso realista de fila sem manter pendências indefinidamente. | y |
 | Referência que chega **depois** da dependente já ter sido rejeitada por `REFERENCE_NOT_FOUND` | A referência é processada normalmente; a dependente rejeitada **não** é reaberta (estado terminal). | Estados terminais são imutáveis (seção 6.3); o provedor recebeu o evento de rejeição e decide reenviar com novo id. | y |
 | `walletId` inexistente na submissão | 422 `WALLET_NOT_FOUND`, **não** persistido (não há wallet para FK); logado e contado em métrica. Via SQS: ack. | Sem wallet não há agregado para auditar; a resposta é determinística e não depende de estado da transação. | y |
-| `playerId` diferente do dono da wallet | `REJECTED` `WALLET_PLAYER_MISMATCH`, persistido (auditável). | A wallet existe, então a tentativa é auditável. | y |
+| `playerId` diferente do dono da wallet, ou moeda diferente da moeda da wallet | `422` `WALLET_PLAYER_MISMATCH` / `CURRENCY_MISMATCH` **sem persistir** a transação (mesmo critério de `WALLET_NOT_FOUND`); via SQS: ack + log + métrica; nenhum evento na outbox. No schema, `FOREIGN KEY (wallet_id, currency, player_id) → wallets (id, currency, player_id)` impede que uma transação inconsistente seja gravada. | A chave estrangeira composta torna impossível gravar a transação com player ou moeda diferentes da wallet; rejeitar antes do INSERT é a única saída coerente com o schema. A evidência fica em log e métrica. | y |
+| `providerId` reservado | `"internal"` é reservado às transações `OPENING`; o contrato Zod rejeita `providerId = "internal"` (400 `VALIDATION_ERROR`). | Evita que um provedor colida com `opening:{walletId}` e burle a regra de `OPENING` interno. | y |
+| Ordem dos eventos da outbox | **Best-effort**: falha com backoff e publishers concorrentes podem inverter eventos de uma mesma wallet. O consumidor ordena por `walletVersion` e deduplica por `eventId`. Não se promete ordem estrita. | A garantia real é entrega at-least-once sem perda; ordem estrita exigiria um publisher único por wallet, o que contradiz múltiplas réplicas. | y |
+| Agregação das métricas globais da outbox | `outbox_pending`, `outbox_lag_seconds` e `outbox_messages_high_attempts` são lidas do banco, então todas as réplicas reportam o mesmo valor. Agregam-se com `max()`, nunca com `sum()`. | `sum()` multiplicaria o valor pelo número de réplicas. | y |
+| Conflito de idempotência vindo do SQS (`IDEMPOTENCY_KEY_REUSED`, `EXTERNAL_ID_CONFLICT`) | Mensagem vai para `wager-transactions-dlq.fifo` + ack + métrica; nada é gravado. | Mesmo critério do `messageId` com payload divergente: o que não fica registrado no banco preserva a evidência na DLQ. | y |
+| Bancos de teste | Testes de integração e concorrência rodam no banco `wagering_test`, separado do de desenvolvimento; `bun run test` executa unidade, integração e concorrência. | Evita que testes sujem ou dependam do banco de desenvolvimento. | y |
+| Imagens do Compose | Versões fixas (PostgreSQL e LocalStack), nunca `:latest`. | Reprodutibilidade para o avaliador. | y |
 | Uso de `PENDING` | Estado inicial em memória (`WagerTransaction.create`); no caminho síncrono a transação é persistida já no estado resultante (`PROCESSED`/`REJECTED`/`PENDING_REFERENCE`) na mesma transação SQL. | Evita commits intermediários que precisariam de recuperação própria. | y |
 | Uso de `FAILED` | Transação já persistida (`PENDING_REFERENCE`) cujo reprocessamento sofre erro permanente não-negocial (ex.: estado inconsistente detectado, exceção não classificada após esgotar retries) → `FAILED` com `failureCode` `PROCESSING_FAILED`, auditável, evento `WagerTransactionRejected` **não** é emitido (é falha nossa, não regra de negócio) — métrica + log de erro. | Enunciado define FAILED como erro permanente de infra auditável; o único lugar onde a transação já existe e o erro é nosso é o worker. | y |
 | Mesmo `messageId` SQS com payload diferente | Enviar a mensagem para `wager-transactions-dlq.fifo`, fazer ack, log `warn` e incrementar `inbox_payload_conflict_total`; nada é processado. | A inbox é por `(consumerName, messageId)`; reprocessar quebraria a dedup. Mandar para a DLQ preserva a evidência para investigação (só ack a descartaria). | y |
@@ -113,7 +119,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 6. IF `walletId` não existe (ou não é UUID) THEN `GET /wallets/:walletId` SHALL responder 404 `WALLET_NOT_FOUND` (ou 400 `VALIDATION_ERROR` para id malformado).
 7. The system SHALL incrementar `version` da wallet em exatamente 1 a cada mudança de saldo e SHALL não alterá-la em operações sem efeito no saldo (`LOSS`, `REJECTED`, `PENDING_REFERENCE`).
 8. IF uma operação deixaria o saldo negativo THEN `Wallet` SHALL recusar a mudança (erro de domínio) e o banco SHALL impedir via `CHECK (balance >= 0)`.
-9. IF a moeda da operação difere da moeda da wallet THEN `Wallet` SHALL lançar `CurrencyMismatchError` e a transação SHALL ser `REJECTED` `CURRENCY_MISMATCH`.
+9. IF a moeda da operação difere da moeda da wallet THEN `Wallet` SHALL lançar `CurrencyMismatchError`, e o sistema SHALL responder 422 `CURRENCY_MISMATCH` sem persistir a transação, garantido no schema por `FOREIGN KEY (wallet_id, currency, player_id) → wallets (id, currency, player_id)`.
 
 **Independent Test**: criar wallet com 1000.00 e com 0.00, consultar, ver ledger com 1 e 0 lançamentos.
 
@@ -134,12 +140,13 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 5. IF `kind` é `OPENING` (HTTP ou SQS) THEN the system SHALL rejeitar com 400 `VALIDATION_ERROR` sem persistir.
 6. IF `REFUND` ou `ROLLBACK` não traz `referenceExternalTransactionId` THEN the system SHALL rejeitar com 400 `VALIDATION_ERROR`, também garantido por `CHECK` no banco.
 7. IF `walletId` não existe THEN the system SHALL responder 422 `WALLET_NOT_FOUND` sem persistir transação.
-8. IF `playerId` não é o dono da wallet THEN the system SHALL marcar `REJECTED` `WALLET_PLAYER_MISMATCH`.
+8. IF `playerId` não é o dono da wallet THEN the system SHALL responder 422 `WALLET_PLAYER_MISMATCH` sem persistir a transação, garantido no schema pela mesma chave estrangeira composta.
 9. The system SHALL persistir cada transação com `providerId`, `externalTransactionId`, `idempotencyKey`, `payloadHash`, `walletId`, `playerId`, `roundId`, `gameId`, `kind`, `amount`, `currency`, `status`, `failureCode`, `referenceTransactionId`, `balanceAfter` observado e timestamps.
 10. WHEN `GET /wagering/transactions/:transactionId` ou `GET /providers/:providerId/wagering/transactions/:externalTransactionId` é chamado THEN the system SHALL responder 200 com status, `failureCode`, `money`, `kind`, referência e `balanceAfter`; inexistente SHALL responder 404 `TRANSACTION_NOT_FOUND`.
 11. IF uma transição de estado é tentada a partir de `PROCESSED`, `REJECTED` ou `FAILED` THEN `WagerTransaction` SHALL lançar `InvalidTransactionStateError`.
 12. The system SHALL permitir somente as transições `PENDING → PROCESSED | REJECTED | PENDING_REFERENCE | FAILED` e `PENDING_REFERENCE → PROCESSED | REJECTED | FAILED`.
 13. IF `money.amount` é `0.00` em `BET`, `WIN`, `REFUND` ou `ROLLBACK` THEN the system SHALL rejeitar com 400 `VALIDATION_ERROR`; `LOSS` com `0.00` SHALL ser aceito.
+14. IF `providerId` é `"internal"` THEN the system SHALL rejeitar com 400 `VALIDATION_ERROR` (valor reservado às transações `OPENING`).
 
 **Independent Test**: sequência BET → WIN → LOSS numa wallet e checagem de saldo, ledger e status.
 
@@ -269,6 +276,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 10. WHEN o processo recebe `SIGTERM` THEN the system SHALL parar de buscar mensagens, concluir as em andamento dentro do grace period, e devolver visibilidade (`ChangeMessageVisibility 0`) das não concluídas.
 11. The system SHALL aplicar ao `providerId` da mensagem as mesmas validações de domínio da API (fila é canal interno confiável apenas quanto à autenticação).
 12. IF chega um `messageId` já registrado na inbox com `payloadHash` diferente THEN the system SHALL enviar a mensagem à DLQ, fazer ack, não processar e incrementar `inbox_payload_conflict_total`.
+13. IF a mensagem resulta em `IDEMPOTENCY_KEY_REUSED` ou `EXTERNAL_ID_CONFLICT` THEN the system SHALL enviá-la à DLQ, fazer ack e incrementar `idempotency_conflicts_total`, sem gravar nada.
 
 **Independent Test**: publicar a mesma mensagem 2× e com o worker morto antes do ack; uma única transação e um único lançamento.
 
@@ -292,7 +300,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 8. WHEN dois ou mais publishers rodam sobre a mesma outbox THEN the system SHALL publicar cada evento sem que dois publishers peguem a mesma linha ao mesmo tempo (claim com lease: `FOR UPDATE SKIP LOCKED` + `locked_until`, commit do claim antes da chamada ao SQS).
 9. WHEN o processo morre após o commit e antes de publicar (inclusive após fazer o claim) THEN outra instância SHALL publicar o evento assim que `locked_until` expirar.
 10. IF a publicação falha THEN the system SHALL incrementar `attempts`, agendar `nextAttemptAt` com backoff, nunca descartar o evento e refletir pendentes com muitas tentativas em `outbox_messages_high_attempts`.
-11. The system SHALL tolerar publicação duplicada: cada evento carrega `eventId` estável para dedup no consumidor.
+11. The system SHALL tolerar publicação duplicada e fora de ordem: cada evento carrega `eventId` estável para dedup e `walletVersion` para ordenação pelo consumidor; a ordem entre eventos de uma wallet é best-effort.
 12. The system SHALL não manter transação SQL aberta durante a chamada de rede ao SQS.
 
 **Independent Test**: commit com publisher desligado → evento pendente; subir publisher em outra instância → publicado em `wallet-events.fifo`.
@@ -343,7 +351,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 1. The system SHALL emitir logs JSON contendo, quando aplicável, `correlationId`, `messageId`, `transactionId`, `walletId`, `providerId`.
 2. The system SHALL não logar `amount`, saldos, `playerId` nem payloads completos.
 3. WHEN requisição HTTP chega com `X-Correlation-Id` THEN the system SHALL propagá-lo para logs e eventos; caso ausente SHALL gerar um UUID. Mensagens SQS usam `messageId` como `correlationId` quando ausente.
-4. The system SHALL expor em `GET /metrics` (Prometheus): `wager_transactions_total{kind,status}`, `idempotent_replays_total`, `idempotency_conflicts_total`, `inbox_duplicates_total`, `retries_total{reason}`, `dlq_messages_total`, `lock_conflicts_total`, `outbox_lag_seconds`, `outbox_pending`, `outbox_messages_high_attempts`, `inbox_payload_conflict_total`, `processing_duration_seconds` (histograma), `reconciliation_mismatches_total`.
+4. The system SHALL expor em `GET /metrics` (Prometheus): `wager_transactions_total{kind,status}`, `idempotent_replays_total`, `idempotency_conflicts_total`, `inbox_duplicates_total`, `retries_total{reason}`, `dlq_messages_total`, `lock_conflicts_total`, `outbox_lag_seconds`, `outbox_pending`, `outbox_messages_high_attempts` (as três métricas da outbox vêm do banco: agregar com `max()` entre réplicas, nunca `sum()`), `inbox_payload_conflict_total`, `processing_duration_seconds` (histograma), `reconciliation_mismatches_total`.
 5. WHEN `GET /health/live` é chamado THEN the system SHALL responder 200 enquanto o processo estiver vivo, sem tocar dependências.
 6. WHEN `GET /health/ready` é chamado THEN the system SHALL responder 200 se PostgreSQL (`SELECT 1`) e SQS (`GetQueueUrl`) respondem, e 503 com o detalhe da dependência falha caso contrário.
 7. The system SHALL deixar `/health/*` e `/metrics` sem autenticação.
@@ -377,7 +385,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 **Acceptance Criteria**:
 
 1. The system SHALL versionar migrations MikroORM reversíveis (`up` e `down`), testadas em ciclo up → down → up em banco real.
-2. The system SHALL declarar no schema: `UNIQUE (player_id, currency)` em wallets; `CHECK (balance >= 0)`; `UNIQUE (provider_id, idempotency_key)`; `UNIQUE (provider_id, external_transaction_id)`; índice parcial de reversão única; `CHECK` de `kind`/`status` válidos; `CHECK` de referência obrigatória para `REFUND`/`ROLLBACK`; ledger com `CHECK` aritmético, `UNIQUE (transaction_id)`, `UNIQUE (wallet_id, wallet_version)` e trigger anti-UPDATE/DELETE; inbox com PK `(consumer_name, message_id)`; outbox com `attempts`, `next_attempt_at`, `locked_until`, `published_at`.
+2. The system SHALL declarar no schema: `UNIQUE (player_id, currency)` e `UNIQUE (id, currency, player_id)` em wallets; chave estrangeira composta `(wallet_id, currency, player_id) → wallets (id, currency, player_id)` nas transações e `(wallet_id, currency) → wallets (id, currency)` no ledger; `CHECK (balance >= 0)`; `UNIQUE (provider_id, idempotency_key)`; `UNIQUE (provider_id, external_transaction_id)`; índice parcial de reversão única; `CHECK` de `kind`/`status` válidos; `CHECK` de referência obrigatória para `REFUND`/`ROLLBACK`; ledger com `CHECK` aritmético, `UNIQUE (transaction_id)`, `UNIQUE (wallet_id, wallet_version)` e trigger anti-UPDATE/DELETE; inbox com PK `(consumer_name, message_id)`; outbox com `attempts`, `next_attempt_at`, `locked_until`, `published_at`.
 3. The system SHALL mapear entidades via `EntitySchema`/`defineEntity`, sem decorators no domínio, com `Money` reidratado a partir de `numeric` como string (nunca `number`).
 4. The system SHALL usar a factory `rehydrate` para reconstruir entidades do banco, sem revalidar transições.
 
@@ -397,7 +405,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 2. The system SHALL ter testes de integração contra PostgreSQL e LocalStack reais em containers para: migrations e constraints; atomicidade wallet+ledger+inbox+outbox; inbox e redelivery; publishers concorrentes; retry e DLQ; recuperação após reinício.
 3. The system SHALL ter testes de concorrência com paralelismo real cobrindo os 8 cenários da seção 13 (incluindo ≥ 3 processos separados).
 4. WHEN qualquer teste de integração ou concorrência termina THEN o teste SHALL afirmar `wallet.balance == saldo reconstruído pelo ledger` para toda wallet tocada.
-5. The system SHALL expor `bun run test:unit`, `bun run test:integration` e `bun run test:concurrency`.
+5. The system SHALL expor `bun run test:unit`, `bun run test:integration`, `bun run test:concurrency` e `bun run test` (executa os três), com integração e concorrência no banco `wagering_test`.
 
 **Independent Test**: `bun run test:*` com `docker compose up` verde.
 
@@ -442,7 +450,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | Payload inválido | 400 | Corrigir payload | `VALIDATION_ERROR`, `IDEMPOTENCY_KEY_REQUIRED` |
 | Não encontrado (consulta) | 404 | — | `WALLET_NOT_FOUND`, `TRANSACTION_NOT_FOUND` |
 | Conflito | 409 | Não reenviar igual; investigar | `IDEMPOTENCY_KEY_REUSED`, `EXTERNAL_ID_CONFLICT`, `WALLET_ALREADY_EXISTS` |
-| Rejeição de negócio (terminal) | 422 | Desistir ou corrigir e enviar como nova operação | `INSUFFICIENT_FUNDS`, `REVERSAL_INSUFFICIENT_FUNDS`, `CURRENCY_MISMATCH`, `WALLET_NOT_FOUND`, `WALLET_PLAYER_MISMATCH`, `REFERENCE_NOT_FOUND`, `REFERENCE_MISMATCH`, `INVALID_REFERENCE_KIND`, `REFERENCE_NOT_PROCESSED`, `REFERENCE_ALREADY_REVERSED`, `AMOUNT_MISMATCH` |
+| Rejeição de negócio (terminal) | 422 | Desistir ou corrigir e enviar como nova operação | `INSUFFICIENT_FUNDS`, `REVERSAL_INSUFFICIENT_FUNDS`, `CURRENCY_MISMATCH` (não persistido), `WALLET_NOT_FOUND` (não persistido), `WALLET_PLAYER_MISMATCH` (não persistido), `REFERENCE_NOT_FOUND`, `REFERENCE_MISMATCH`, `INVALID_REFERENCE_KIND`, `REFERENCE_NOT_PROCESSED`, `REFERENCE_ALREADY_REVERSED`, `AMOUNT_MISMATCH` |
 | Aceito pendente | 202 | Aguardar evento / consultar | (status `PENDING_REFERENCE`) |
 | Transitório | 503 | Reenviar igual após `Retry-After` | `DEPENDENCY_UNAVAILABLE`, `CONCURRENCY_CONFLICT` |
 | Auth (extensão) | 403 | Corrigir credencial | `PROVIDER_IDENTITY_MISMATCH` |
@@ -486,6 +494,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | TXN-11 | P1: Submissão de transações | Design | Pending |
 | TXN-12 | P1: Submissão de transações | Design | Pending |
 | TXN-13 | P1: Submissão de transações | Design | Pending |
+| TXN-14 | P1: Submissão de transações | Design | Pending |
 | REV-01 | P1: Reversões e referências | Design | Pending |
 | REV-02 | P1: Reversões e referências | Design | Pending |
 | REV-03 | P1: Reversões e referências | Design | Pending |
@@ -537,6 +546,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | SQS-10 | P1: Consumo SQS com inbox | Design | Pending |
 | SQS-11 | P1: Consumo SQS com inbox | Design | Pending |
 | SQS-12 | P1: Consumo SQS com inbox | Design | Pending |
+| SQS-13 | P1: Consumo SQS com inbox | Design | Pending |
 | OUT-01 | P1: Transactional outbox | Design | Pending |
 | OUT-02 | P1: Transactional outbox | Design | Pending |
 | OUT-03 | P1: Transactional outbox | Design | Pending |
@@ -583,7 +593,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 
 IDs individuais = prefixo + número do critério na story (ex.: `REV-08` = critério 8 de Reversões).
 
-**Coverage:** 125 critérios, 0 mapeados para tasks (fase Tasks ainda não executada).
+**Coverage:** 127 critérios, 0 mapeados para tasks (fase Tasks ainda não executada).
 
 ---
 
