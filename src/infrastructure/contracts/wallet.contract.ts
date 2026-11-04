@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { decodeLedgerCursor, encodeLedgerCursor } from '../../application/services/ledger-cursor';
 import { moneyInputSchema } from './money.contract';
 
 export const createWalletSchema = z.object({
@@ -8,25 +9,7 @@ export const createWalletSchema = z.object({
 
 export type CreateWalletInput = z.infer<typeof createWalletSchema>;
 
-/** Opaque cursor: base64url of `{"v": walletVersion}` of the last entry already seen. */
-export function encodeLedgerCursor(walletVersion: number): string {
-  return Buffer.from(JSON.stringify({ v: walletVersion })).toString('base64url');
-}
-
-function decodeLedgerCursor(cursor: string): number | undefined {
-  try {
-    const decoded: unknown = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));
-    if (typeof decoded === 'object' && decoded !== null && !Array.isArray(decoded)) {
-      const version = (decoded as { v?: unknown }).v;
-      if (typeof version === 'number' && Number.isInteger(version) && version >= 1) {
-        return version;
-      }
-    }
-  } catch {
-    // Not base64url JSON: falls through to invalid.
-  }
-  return undefined;
-}
+export { encodeLedgerCursor };
 
 const cursorSchema = z
   .string()
