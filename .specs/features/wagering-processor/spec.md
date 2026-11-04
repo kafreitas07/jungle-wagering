@@ -45,6 +45,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | Formato de `amount` na entrada | Regex `^\d+\.\d{2}$` aplicada **na validação do contrato** (HTTP e SQS). `"25"` e `"25.5"` são rejeitados (400). `Money` em si aceita negativos internamente (`negate`/`subtract`). | Separa regra de contrato (escala fixa, não-negativo) da álgebra do value object. | y (ajuste 6) |
 | Valor zero | `money.amount` deve ser `> 0.00` para `BET`, `WIN`, `REFUND` e `ROLLBACK` (400 `VALIDATION_ERROR`); `LOSS` aceita `>= 0.00`; `initialBalance` aceita `>= 0.00`. | Movimento de valor zero não tem significado financeiro e geraria lançamento vazio; `LOSS` não move saldo, então `0.00` é um resultado legítimo; wallet pode abrir zerada. | y |
 | Limite de magnitude | `amount` com no máximo 18 dígitos inteiros; colunas `numeric(20,2)`. | Limite explícito evita overflow silencioso e define bound testável. | y |
+| `Money` com moedas diferentes (MON-05) | `add`, `subtract` e `isLessThan` lançam `CurrencyMismatchError`. `equals` devolve `false`, inclusive com o mesmo valor numérico. | `equals` é uma pergunta, não uma operação: duas quantias em moedas diferentes simplesmente não são iguais. Somar, subtrair ou ordenar entre moedas não tem resultado, então lança. | y |
 | `WIN`/`LOSS` com `referenceExternalTransactionId` | Opcional. Se informado, é resolvido e validado pelas mesmas regras de referência (mesmo provider/player/wallet/moeda/rodada, deve ser `BET`); ausente → `PENDING_REFERENCE`. Sem referência → processa sem vínculo. | Enunciado diz "pode referenciar a BET"; aplicar a mesma regra evita dois caminhos de validação. Múltiplos `WIN` por `BET` são permitidos. | y |
 | Referência em estado não-terminal (`PENDING`/`PENDING_REFERENCE`) | Tratada como ausente: a dependente vai/permanece em `PENDING_REFERENCE`. | A referência ainda pode ser aplicada; rejeitar agora seria prematuro. | y |
 | Referência `REJECTED`/`FAILED` | Dependente `REJECTED` com `REFERENCE_NOT_PROCESSED`. | Regras 7.REFUND/ROLLBACK exigem referência `PROCESSED`; estado terminal nunca mudará. | y |
@@ -464,14 +465,14 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
 | MON-01 | P1: Money exato | Tasks (T4, T16) | Pending |
-| MON-02 | P1: Money exato | Tasks (T4) | Pending |
-| MON-03 | P1: Money exato | Tasks (T4) | Pending |
-| MON-04 | P1: Money exato | Tasks (T4) | Pending |
-| MON-05 | P1: Money exato | Tasks (T4) | Pending |
-| MON-06 | P1: Money exato | Tasks (T4) | Pending |
-| MON-07 | P1: Money exato | Tasks (T4) | Pending |
-| MON-08 | P1: Money exato | Tasks (T11) | Pending |
-| MON-09 | P1: Money exato | Tasks (T4) | Pending |
+| MON-02 | P1: Money exato | Tasks (T4) | Done |
+| MON-03 | P1: Money exato | Tasks (T4) | Done |
+| MON-04 | P1: Money exato | Tasks (T4) | Done |
+| MON-05 | P1: Money exato | Tasks (T4) | Done |
+| MON-06 | P1: Money exato | Tasks (T4) | Done |
+| MON-07 | P1: Money exato | Tasks (T4) | Done |
+| MON-08 | P1: Money exato | Tasks (T11) | Done |
+| MON-09 | P1: Money exato | Tasks (T4) | Done |
 | WAL-01 | P1: Wallet e abertura | Tasks (T20, T29) | Pending |
 | WAL-02 | P1: Wallet e abertura | Tasks (T6, T20) | Pending |
 | WAL-03 | P1: Wallet e abertura | Tasks (T6, T20) | Pending |
@@ -492,7 +493,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | TXN-09 | P1: Submissão de transações | Tasks (T14, T21) | Pending |
 | TXN-10 | P1: Submissão de transações | Tasks (T24, T30) | Pending |
 | TXN-11 | P1: Submissão de transações | Tasks (T7, T14) | Pending |
-| TXN-12 | P1: Submissão de transações | Tasks (T7) | Pending |
+| TXN-12 | P1: Submissão de transações | Tasks (T7) | Done |
 | TXN-13 | P1: Submissão de transações | Tasks (T11, T30) | Pending |
 | TXN-14 | P1: Submissão de transações | Tasks (T11, T30) | Pending |
 | REV-01 | P1: Reversões e referências | Tasks (T21) | Pending |
@@ -517,7 +518,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | IDEM-04 | P1: Idempotência persistente | Tasks (T22, T30) | Pending |
 | IDEM-05 | P1: Idempotência persistente | Tasks (T22, T30) | Pending |
 | IDEM-06 | P1: Idempotência persistente | Tasks (T31) | Pending |
-| IDEM-07 | P1: Idempotência persistente | Tasks (T10) | Pending |
+| IDEM-07 | P1: Idempotência persistente | Tasks (T10) | Done |
 | IDEM-08 | P1: Idempotência persistente | Tasks (T42) | Pending |
 | CONC-01 | P1: Concorrência | Tasks (T31) | Pending |
 | CONC-02 | P1: Concorrência | Tasks (T18, T21, T31) | Pending |
@@ -533,7 +534,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | LEDG-04 | P1: Ledger imutável | Tasks (T15) | Pending |
 | LEDG-05 | P1: Ledger imutável | Tasks (T25, T29) | Pending |
 | LEDG-06 | P1: Ledger imutável | Tasks (T11, T25, T29) | Pending |
-| LEDG-07 | P1: Ledger imutável | Tasks (T5) | Pending |
+| LEDG-07 | P1: Ledger imutável | Tasks (T5) | Done |
 | SQS-01 | P1: Consumo SQS com inbox | Tasks (T37) | Pending |
 | SQS-02 | P1: Consumo SQS com inbox | Tasks (T19, T37) | Pending |
 | SQS-03 | P1: Consumo SQS com inbox | Tasks (T37) | Pending |
@@ -553,7 +554,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | OUT-04 | P1: Transactional outbox | Tasks (T20, T21) | Pending |
 | OUT-05 | P1: Transactional outbox | Tasks (T21) | Pending |
 | OUT-06 | P1: Transactional outbox | Tasks (T21) | Pending |
-| OUT-07 | P1: Transactional outbox | Tasks (T9) | Pending |
+| OUT-07 | P1: Transactional outbox | Tasks (T9) | Done |
 | OUT-08 | P1: Transactional outbox | Tasks (T36) | Pending |
 | OUT-09 | P1: Transactional outbox | Tasks (T36, T40) | Pending |
 | OUT-10 | P1: Transactional outbox | Tasks (T36) | Pending |

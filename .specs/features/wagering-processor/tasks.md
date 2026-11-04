@@ -236,11 +236,11 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Cada critério MON-01..07 e 09 tem ao menos um teste com valor esperado literal (ex.: `Money.from('10.5')` → `'10.50'`)
-- [ ] Rejeita `NaN`, `Infinity`, `1e3`, vazio, `abc`, mais de 2 casas e moeda fora de ISO-4217; nunca arredonda
-- [ ] Operações retornam nova instância; a original não muda; `subtract` negativo → `isNegative()`; moedas diferentes → `CurrencyMismatchError`
-- [ ] `grep -rn "number" src/domain/money` não encontra tipo `number` em campo de valor; `src/domain` não importa `@nestjs` nem `@mikro-orm`
-- [ ] Gate rápido passa; ≥ 30 testes
+- [x] Cada critério MON-01..07 e 09 tem ao menos um teste com valor esperado literal (ex.: `Money.from('10.5')` → `'10.50'`)
+- [x] Rejeita `NaN`, `Infinity`, `1e3`, vazio, `abc`, mais de 2 casas e moeda fora de ISO-4217; nunca arredonda
+- [x] Operações retornam nova instância; a original não muda; `subtract` negativo → `isNegative()`; moedas diferentes → `CurrencyMismatchError`
+- [x] `grep -rn "number" src/domain/money` não encontra tipo `number` em campo de valor; `src/domain` não importa `@nestjs` nem `@mikro-orm`
+- [x] Gate rápido passa; ≥ 30 testes
 
 **Tests**: unit
 **Gate**: quick
@@ -258,10 +258,10 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] `create` com CREDIT e DEBIT coerentes passa; aritmética incoerente lança erro de domínio
-- [ ] Valor `0.00` e saldos negativos são recusados
-- [ ] Tentativa de atribuir a um campo falha em tempo de compilação (`@ts-expect-error` no teste) e o objeto é congelado
-- [ ] `rehydrate` não revalida; gate rápido passa; ≥ 8 testes
+- [x] `create` com CREDIT e DEBIT coerentes passa; aritmética incoerente lança erro de domínio
+- [x] Valor `0.00` e saldos negativos são recusados
+- [x] Tentativa de atribuir a um campo falha em tempo de compilação (`@ts-expect-error` no teste) e o objeto é congelado
+- [x] `rehydrate` não revalida; gate rápido passa; ≥ 8 testes
 
 **Tests**: unit
 **Gate**: quick
@@ -279,11 +279,11 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] `open` com saldo inicial > 0 devolve `openingEntry` com `balanceBefore 0.00` e versão 1; com `0.00` não devolve lançamento
-- [ ] `debit` acima do saldo lança erro de domínio; débito que zera o saldo é aceito
-- [ ] `version` sobe exatamente 1 por mudança de saldo; moeda diferente lança `CurrencyMismatchError`
-- [ ] Não existe caminho público que altere o saldo sem devolver o lançamento
-- [ ] Gate rápido passa; ≥ 14 testes
+- [x] `open` com saldo inicial > 0 devolve `openingEntry` com `balanceBefore 0.00` e versão 1; com `0.00` não devolve lançamento
+- [x] `debit` acima do saldo lança erro de domínio; débito que zera o saldo é aceito
+- [x] `version` sobe exatamente 1 por mudança de saldo; moeda diferente lança `CurrencyMismatchError`
+- [x] Não existe caminho público que altere o saldo sem devolver o lançamento
+- [x] Gate rápido passa; ≥ 14 testes
 
 **Tests**: unit
 **Gate**: quick
@@ -301,11 +301,11 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Só as transições `PENDING → PROCESSED|REJECTED|PENDING_REFERENCE|FAILED` e `PENDING_REFERENCE → PROCESSED|REJECTED|FAILED` passam
-- [ ] Qualquer transição a partir de `PROCESSED`, `REJECTED` ou `FAILED` lança `InvalidTransactionStateError`
-- [ ] `scheduleReferenceRetry` produz 1 s, 2 s, 4 s … 300 s e esgota na 10ª tentativa; `rehydrate` não revalida transições
-- [ ] `createOpening` é a única forma de gerar `OPENING` (`provider_id = 'internal'`)
-- [ ] Gate rápido passa; ≥ 20 testes
+- [x] Só as transições `PENDING → PROCESSED|REJECTED|PENDING_REFERENCE|FAILED` e `PENDING_REFERENCE → PROCESSED|REJECTED|FAILED` passam
+- [x] Qualquer transição a partir de `PROCESSED`, `REJECTED` ou `FAILED` lança `InvalidTransactionStateError`
+- [x] `scheduleReferenceRetry` produz 1 s, 2 s, 4 s … 300 s e esgota na 10ª tentativa; `rehydrate` não revalida transições
+- [x] `createOpening` é a única forma de gerar `OPENING` (`provider_id = 'internal'`)
+- [x] Gate rápido passa; ≥ 20 testes
 
 **Tests**: unit
 **Gate**: quick
@@ -323,11 +323,11 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] BET, WIN e LOSS: processado com a direção e o lançamento corretos; BET sem saldo → `INSUFFICIENT_FUNDS`; LOSS sem lançamento
-- [ ] Cada rejeição de reversão tem teste próprio: `REFERENCE_MISMATCH`, `INVALID_REFERENCE_KIND` (inclui autorreferência), `AMOUNT_MISMATCH`, `REFERENCE_NOT_PROCESSED`, `REFERENCE_ALREADY_REVERSED`, `REVERSAL_INSUFFICIENT_FUNDS`
-- [ ] REFUND de BET credita; ROLLBACK de BET credita; ROLLBACK de WIN ou REFUND debita; referência ausente ou não-terminal → `PendingReference`
-- [ ] Saldo que chega exatamente a `0.00` é aceito
-- [ ] Gate rápido passa; ≥ 40 testes
+- [x] BET, WIN e LOSS: processado com a direção e o lançamento corretos; BET sem saldo → `INSUFFICIENT_FUNDS`; LOSS sem lançamento
+- [x] Cada rejeição de reversão tem teste próprio: `REFERENCE_MISMATCH`, `INVALID_REFERENCE_KIND` (inclui autorreferência), `AMOUNT_MISMATCH`, `REFERENCE_NOT_PROCESSED`, `REFERENCE_ALREADY_REVERSED`, `REVERSAL_INSUFFICIENT_FUNDS`
+- [x] REFUND de BET credita; ROLLBACK de BET credita; ROLLBACK de WIN ou REFUND debita; referência ausente ou não-terminal → `PendingReference`
+- [x] Saldo que chega exatamente a `0.00` é aceito
+- [x] Gate rápido passa; ≥ 40 testes
 
 **Tests**: unit
 **Gate**: quick
@@ -345,10 +345,10 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Cada evento declara `eventType` e `version` no tipo e serializa no envelope da seção 11 do enunciado
-- [ ] `WalletBalanceChanged` carrega `walletVersion`, `direction`, `money`, `balanceBefore` e `balanceAfter` como `MoneyProps`
-- [ ] Eventos e mensagens são `readonly`; `eventId` é gerado uma única vez
-- [ ] Gate rápido passa; ≥ 10 testes
+- [x] Cada evento declara `eventType` e `version` no tipo e serializa no envelope da seção 11 do enunciado
+- [x] `WalletBalanceChanged` carrega `walletVersion`, `direction`, `money`, `balanceBefore` e `balanceAfter` como `MoneyProps`
+- [x] Eventos e mensagens são `readonly`; `eventId` é gerado uma única vez
+- [x] Gate rápido passa; ≥ 10 testes
 
 **Tests**: unit
 **Gate**: quick
@@ -368,10 +368,10 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Mesma operação com chaves em ordens diferentes produz o mesmo hash; qualquer campo de negócio alterado muda o hash
-- [ ] `idempotencyKey`, `messageId`, `occurredAt` e headers não entram no hash
-- [ ] Hash de uma entrada fixa bate com o valor literal esperado (64 caracteres hex)
-- [ ] Gate rápido passa; ≥ 8 testes
+- [x] Mesma operação com chaves em ordens diferentes produz o mesmo hash; qualquer campo de negócio alterado muda o hash
+- [x] `idempotencyKey`, `messageId`, `occurredAt` e headers não entram no hash
+- [x] Hash de uma entrada fixa bate com o valor literal esperado (64 caracteres hex)
+- [x] Gate rápido passa; ≥ 8 testes
 
 **Tests**: unit
 **Gate**: quick
@@ -389,11 +389,11 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] `"25"`, `"25.5"`, `"-1.00"` e `"1e3"` → erro de validação; `"25.00"` passa; mais de 18 dígitos inteiros falha
-- [ ] `kind = OPENING`, `providerId = "internal"`, REFUND/ROLLBACK sem referência e `0.00` em BET/WIN/REFUND/ROLLBACK são rejeitados; LOSS `0.00` passa
-- [ ] `limit` fora de 1..200 e cursor inválido são rejeitados
-- [ ] O mesmo schema valida o corpo HTTP e a mensagem SQS
-- [ ] Gate rápido passa; ≥ 25 testes
+- [x] `"25"`, `"25.5"`, `"-1.00"` e `"1e3"` → erro de validação; `"25.00"` passa; mais de 18 dígitos inteiros falha
+- [x] `kind = OPENING`, `providerId = "internal"`, REFUND/ROLLBACK sem referência e `0.00` em BET/WIN/REFUND/ROLLBACK são rejeitados; LOSS `0.00` passa
+- [x] `limit` fora de 1..200 e cursor inválido são rejeitados
+- [x] O mesmo schema valida o corpo HTTP e a mensagem SQS
+- [x] Gate rápido passa; ≥ 25 testes
 
 **Tests**: unit
 **Gate**: quick
@@ -411,9 +411,9 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Todas as portas do design declaradas, sem import de Nest ou do ORM
-- [ ] `TxRepositories` expõe `wallets.lockById`, `transactions.*`, `ledger.append`, `inbox.tryRecord` e `outbox.enqueue`
-- [ ] Gate de build passa: `bun run typecheck`
+- [x] Todas as portas do design declaradas, sem import de Nest ou do ORM
+- [x] `TxRepositories` expõe `wallets.lockById`, `transactions.*`, `ledger.append`, `inbox.tryRecord` e `outbox.enqueue`
+- [x] Gate de build passa: `bun run typecheck`
 
 **Tests**: none
 **Gate**: build
