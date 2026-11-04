@@ -1,7 +1,9 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import type { MikroORM } from '@mikro-orm/postgresql';
 import { ProviderIdentityMismatchError, type ProviderIdentityPort } from '../../../src/application/ports';
+import { ReprocessPendingReference } from '../../../src/application/use-cases/reprocess-pending-reference';
 import { api, denyAllProviders, startTestApp, type TestApp } from '../../support/app';
+import { FakeClock, testUnitOfWork } from '../../support/context';
 import { closeTestOrm, getTestOrm } from '../../support/db';
 import { createWallet, post, submission } from '../../support/http';
 import { assertReconciledByApi } from '../../support/reconcile';
@@ -306,6 +308,37 @@ describe('GET transaction by id and by external id (TXN-10)', () => {
     expect(unknownId.body.failureCode).toBe('TRANSACTION_NOT_FOUND');
     expect(otherProvider.status).toBe(404);
     expect(malformed.status).toBe(400);
+  });
+});
+
+describe('a FAILED transaction answers 500 PROCESSING_FAILED, on replay and on lookup (API-04)', () => {
+  test('after the worker gives up on a pending reversal, the same request replays as 500 with failureCode PROCESSING_FAILED', async () => {
+    const wallet = await createWallet(app.url, '1000.00');
+    const body = submission(wallet, { kind: 'ROLLBACK', referenceExternalTransactionId: `missing-${uuid()}` });
+    const key = `key-${uuid()}`;
+    const pending = await post(app.url, body, key);
+    expect(pending.status).toBe(202);
+    const markFailed = new ReprocessPendingReference({
+      unitOfWork: testUnitOfWork(orm),
+      clock: new FakeClock(),
+      referencePolicy: { maxAttempts: 10, baseDelayMs: 1000, factor: 2, maxDelayMs: 300_000 },
+    });
+    expect(await markFailed.markFailed({ id: pending.body.transactionId, walletId: wallet.id, kind: 'ROLLBACK' })).toBe(true);
+
+    const replay = await post(app.url, body, key);
+
+    expect(replay.status).toBe(500);
+    expect(replay.body).toMatchObject({
+      transactionId: pending.body.transactionId,
+      status: 'FAILED',
+      failureCode: 'PROCESSING_FAILED',
+      idempotentReplay: true,
+    });
+    const lookup = await api(app.url, 'GET', `/wagering/transactions/${pending.body.transactionId}`);
+    expect(lookup.status).toBe(200);
+    expect(lookup.body).toMatchObject({ status: 'FAILED', failureCode: 'PROCESSING_FAILED' });
+    expect(await sql(orm, 'select balance::text from wallets where id = ?', [wallet.id])).toEqual([{ balance: '1000.00' }]);
+    await assertReconciledByApi(orm, app.url, [wallet.id]);
   });
 });
 
