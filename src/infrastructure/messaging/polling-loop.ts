@@ -1,4 +1,5 @@
 import { type LoggerPort, NoopLogger } from '../../application/ports';
+import { safeDetail } from '../health/dependency-probes';
 
 /**
  * Runs `tick` again and again, `intervalMs` after the previous one finished (never overlapping itself).
@@ -36,7 +37,7 @@ export class PollingLoop {
       try {
         await this.tick();
       } catch (error) {
-        this.logger.error(`${this.name} tick failed`, { errorName: (error as Error)?.name, errorMessage: (error as Error)?.message });
+        this.logger.error(`${this.name} tick failed`, { errorName: (error as Error)?.name, errorMessage: safeDetail(error) });
       }
       if (!this.running) {
         return;

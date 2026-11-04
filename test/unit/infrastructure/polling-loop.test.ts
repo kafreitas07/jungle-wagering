@@ -42,7 +42,7 @@ describe('PollingLoop', () => {
 
     expect(ticks).toBeGreaterThanOrEqual(3);
     expect(logger.at('error')).toHaveLength(1);
-    expect(logger.at('error')[0]).toMatchObject({ message: 'worker tick failed', context: { errorMessage: 'database down' } });
+    expect(logger.at('error')[0]).toMatchObject({ message: 'worker tick failed', context: { errorMessage: 'Error: database down' } });
   });
 
   test('ticks never overlap, even when one is slower than the interval', async () => {
@@ -114,5 +114,29 @@ describe('PollingLoop', () => {
 
     expect(maxActive).toBe(1);
     expect(ticks).toBe(after);
+  });
+
+  test('the error text is logged through the credential mask, first line only', async () => {
+    let ticks = 0;
+    const logger = new RecordingLogger();
+    const loop = new PollingLoop(
+      'worker',
+      5,
+      async () => {
+        ticks += 1;
+        throw new Error('connect ECONNREFUSED postgres://wagering:s3cret@db:5432/x\n    at stack line');
+      },
+      logger,
+    );
+
+    loop.start();
+    await until(() => ticks >= 1);
+    await loop.stop();
+
+    const text = String(logger.at('error')[0]?.context?.errorMessage);
+    expect(text).toContain('ECONNREFUSED');
+    expect(text).toContain('//***@db');
+    expect(text).not.toContain('s3cret');
+    expect(text).not.toContain('stack line');
   });
 });
