@@ -160,6 +160,61 @@ describe('submit transaction body (TXN-05, TXN-06, TXN-13, TXN-14)', () => {
   });
 });
 
+describe('identifier length limit (255 characters)', () => {
+  // Unbounded identifiers would overflow the unique indexes in the database and surface as a 500.
+  const at255 = 'a'.repeat(255);
+  const at256 = 'a'.repeat(256);
+
+  test.each(['providerId', 'externalTransactionId', 'roundId', 'gameId'])('HTTP %s: 255 accepted, 256 rejected', (field) => {
+    expect(submitWagerTransactionSchema.safeParse({ ...bet, [field]: at255 }).success).toBe(true);
+
+    const result = submitWagerTransactionSchema.safeParse({ ...bet, [field]: at256 });
+    expect(result.success).toBe(false);
+    expect(paths(result)).toContain(field);
+  });
+
+  test('HTTP referenceExternalTransactionId: 255 accepted, 256 rejected', () => {
+    const refund = { ...bet, kind: 'REFUND' as const };
+
+    expect(submitWagerTransactionSchema.safeParse({ ...refund, referenceExternalTransactionId: at255 }).success).toBe(true);
+
+    const result = submitWagerTransactionSchema.safeParse({ ...refund, referenceExternalTransactionId: at256 });
+    expect(result.success).toBe(false);
+    expect(paths(result)).toContain('referenceExternalTransactionId');
+  });
+
+  test.each(['providerId', 'externalTransactionId', 'roundId', 'gameId', 'idempotencyKey'])(
+    'SQS data.%s: 255 accepted, 256 rejected',
+    (field) => {
+      const withData = (value: string) => ({ ...message, data: { ...message.data, [field]: value } });
+
+      expect(wagerTransactionRequestedSchema.safeParse(withData(at255)).success).toBe(true);
+
+      const result = wagerTransactionRequestedSchema.safeParse(withData(at256));
+      expect(result.success).toBe(false);
+      expect(paths(result)).toContain(`data.${field}`);
+    },
+  );
+
+  test('SQS messageId: 255 accepted, 256 rejected (it becomes the inbox primary key)', () => {
+    const withMessageId = (messageId: string) => ({ ...message, messageId });
+
+    expect(wagerTransactionRequestedSchema.safeParse(withMessageId(`m${'a'.repeat(254)}`)).success).toBe(true);
+
+    const result = wagerTransactionRequestedSchema.safeParse(withMessageId('a'.repeat(256)));
+    expect(result.success).toBe(false);
+    expect(paths(result)).toContain('messageId');
+  });
+
+  test('SQS data.referenceExternalTransactionId: 255 accepted, 256 rejected', () => {
+    const refund = { ...message, data: { ...message.data, kind: 'REFUND' as const } };
+    const withReference = (value: string) => ({ ...refund, data: { ...refund.data, referenceExternalTransactionId: value } });
+
+    expect(wagerTransactionRequestedSchema.safeParse(withReference(at255)).success).toBe(true);
+    expect(wagerTransactionRequestedSchema.safeParse(withReference(at256)).success).toBe(false);
+  });
+});
+
 describe('SQS message WagerTransactionRequested (SQS-01, SQS-08)', () => {
   test('accepts the documented message', () => {
     expect(wagerTransactionRequestedSchema.parse(message)).toEqual(message);

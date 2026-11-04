@@ -6,6 +6,7 @@
   "scripts": {
     "start": "bun run src/main.ts",
     "spike": "bun run spike/run.ts",
+    "migrate": "bun run src/infrastructure/persistence/migrate.ts",
     "typecheck": "tsc --noEmit",
     "test:unit": "bun test test/unit",
     "test:integration": "bun test test/integration --timeout 30000",

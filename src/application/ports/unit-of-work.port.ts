@@ -5,6 +5,8 @@ import type { Wallet } from '../../domain/wallet/wallet';
 import type { WagerTransaction } from '../../domain/wager/wager-transaction';
 
 export interface WalletRepository {
+  /** Plain read, no lock. For queries; never use it to decide a balance change. */
+  findById(id: string): Promise<Wallet | null>;
   /** `SELECT … FOR UPDATE`: serializes every balance change of this wallet. `null` if it does not exist. */
   lockById(id: string): Promise<Wallet | null>;
   insert(wallet: Wallet): Promise<void>;
@@ -25,6 +27,8 @@ export interface TransactionRepository {
 
 export interface LedgerRepository {
   append(entry: WalletLedgerEntry): Promise<void>;
+  /** Newest first (`wallet_version` descending). `beforeVersion` is exclusive. */
+  listByWallet(walletId: string, options: { readonly beforeVersion?: number; readonly limit: number }): Promise<WalletLedgerEntry[]>;
 }
 
 /** `recorded`: first time. `duplicate`: same message, same payload. `conflict`: same message id, different payload. */
@@ -50,4 +54,14 @@ export interface TxRepositories {
 export interface UnitOfWork {
   /** Runs `work` in one SQL transaction: commits when it resolves, rolls everything back when it throws. */
   run<T>(work: (tx: TxRepositories) => Promise<T>): Promise<T>;
+}
+
+/** Thrown by `wallets.save` when the row no longer has the expected version (0 rows updated). */
+export class OptimisticLockError extends Error {
+  readonly code = 'OPTIMISTIC_LOCK';
+
+  constructor(walletId: string, expectedVersion: number) {
+    super(`Wallet ${walletId} is no longer at version ${expectedVersion}`);
+    this.name = 'OptimisticLockError';
+  }
 }
