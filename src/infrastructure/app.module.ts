@@ -7,6 +7,8 @@ import type { AppConfig } from './config/env';
 import { type DependencyProbe, PostgresProbe, SqsProbe } from './health/dependency-probes';
 import { GetTransactionByExternalId, GetTransactionById, GetWallet } from '../application/use-cases/queries';
 import { ListLedger } from '../application/use-cases/list-ledger';
+import { PublishOutboxBatch } from '../application/use-cases/publish-outbox-batch';
+import { ReprocessPendingReference } from '../application/use-cases/reprocess-pending-reference';
 import { ReconcileWallet } from '../application/use-cases/reconcile-wallet';
 import { OpenWallet } from '../application/use-cases/open-wallet';
 import { SubmitWagerTransaction } from '../application/use-cases/submit-wager-transaction';
@@ -28,7 +30,11 @@ import {
   SQS_CLIENT,
   UNIT_OF_WORK,
 } from './http/tokens';
+import { OutboxPublisher } from './messaging/outbox-publisher';
+import { PendingReferenceWorker } from './messaging/pending-reference-worker';
+import { SqsConsumer } from './messaging/sqs-consumer';
 import { createSqsClient } from './messaging/sqs-client';
+import { SqsAdapter } from './messaging/sqs.adapter';
 import { createOrmConfig } from './persistence/orm.config';
 import { MikroOrmUnitOfWork } from './persistence/unit-of-work';
 
@@ -108,6 +114,50 @@ export class AppModule {
           provide: GetTransactionByExternalId,
           inject: [UNIT_OF_WORK],
           useFactory: (unitOfWork: UnitOfWork) => new GetTransactionByExternalId({ unitOfWork }),
+        },
+        {
+          provide: SqsAdapter,
+          inject: [SQS_CLIENT],
+          useFactory: (sqs: SQSClient) => new SqsAdapter(sqs, config.sqs.eventsQueue),
+        },
+        {
+          provide: SqsConsumer,
+          inject: [SqsAdapter, SubmitWagerTransaction, METRICS, LOGGER],
+          useFactory: (adapter: SqsAdapter, submit: SubmitWagerTransaction, metrics: MetricsPort, logger: LoggerPort) =>
+            new SqsConsumer(
+              { adapter, submit, metrics, logger },
+              {
+                queue: config.sqs.wagerQueue,
+                dlq: config.sqs.wagerDlq,
+                pollWaitSeconds: config.sqs.consumer.pollWaitSeconds,
+                maxReceiveCount: config.sqs.consumer.maxReceiveCount,
+                shutdownGraceMs: config.sqs.consumer.shutdownGraceMs,
+                faultInjection: config.faultInjection,
+              },
+            ),
+        },
+        {
+          provide: OutboxPublisher,
+          inject: [UNIT_OF_WORK, SqsAdapter, CLOCK, LOGGER],
+          useFactory: (unitOfWork: UnitOfWork, adapter: SqsAdapter, clock: Clock, logger: LoggerPort) =>
+            new OutboxPublisher(
+              new PublishOutboxBatch({ unitOfWork, publisher: adapter, clock, logger, batchSize: config.outbox.batchSize, leaseMs: config.outbox.leaseMs }),
+              { intervalMs: config.outbox.pollIntervalMs, batchSize: config.outbox.batchSize, logger },
+            ),
+        },
+        {
+          provide: PendingReferenceWorker,
+          inject: [UNIT_OF_WORK, CLOCK, METRICS, LOGGER],
+          useFactory: (unitOfWork: UnitOfWork, clock: Clock, metrics: MetricsPort, logger: LoggerPort) =>
+            new PendingReferenceWorker(
+              new ReprocessPendingReference({
+                unitOfWork,
+                clock,
+                referencePolicy: config.pendingReference,
+                concurrencyRetry: new ConcurrencyRetry({ metrics }),
+              }),
+              { intervalMs: config.pendingWorker.intervalMs, batchSize: config.pendingWorker.batchSize, logger, metrics },
+            ),
         },
         Lifecycle,
       ],
