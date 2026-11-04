@@ -1079,9 +1079,9 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] `docker compose up` sobe Postgres, LocalStack, `migrate` (que termina com sucesso) e `app` saudável
-- [ ] `docker compose up --scale app=3` sobe 3 réplicas sem conflito de porta
-- [ ] Verificação manual registrada no checkpoint: 3 réplicas respondem em `/health/ready`
+- [x] `docker compose up` sobe Postgres, LocalStack, `migrate` (que termina com sucesso) e `app` saudável
+- [x] `docker compose up --scale app=3` sobe 3 réplicas sem conflito de porta
+- [x] Verificação manual registrada no checkpoint: 3 réplicas respondem em `/health/ready`
 
 **Tests**: none
 **Gate**: build
@@ -1099,8 +1099,8 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] `spike/` removido e nenhum import o referencia
-- [ ] `bun run typecheck` passa
+- [x] `spike/` removido e nenhum import o referencia
+- [x] `bun run typecheck` passa
 
 **Tests**: none
 **Gate**: build
@@ -1118,8 +1118,8 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Seguindo só o README em clone limpo, `docker compose up` e `bun run test` passam
-- [ ] Lista pré-requisitos, comandos de execução e de teste
+- [x] Seguindo só o README em clone limpo, `docker compose up` e `bun run test` passam
+- [x] Lista pré-requisitos, comandos de execução e de teste
 
 **Tests**: none
 **Gate**: build
@@ -1137,8 +1137,8 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Trechos propostos apresentados no chat, no tom do arquivo, cobrindo todos os itens de DOC-04 e AUTH-03
-- [ ] `ARCHITECTURE.md` só é alterado depois da aprovação explícita
+- [x] Trechos propostos apresentados no chat, no tom do arquivo, cobrindo todos os itens de DOC-04 e AUTH-03
+- [x] `ARCHITECTURE.md` só é alterado depois da aprovação explícita
 
 **Tests**: none
 **Gate**: build
