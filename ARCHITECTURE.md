@@ -50,6 +50,8 @@ Decidi não implementar a autenticação. Priorizei as garantias financeiras (sa
 
 Em produção, eu usaria o Keycloak: cada provedor seria um cliente OAuth2 com *client credentials*, a API validaria o token JWT pela chave pública do Keycloak, e o `providerId` do token teria que ser igual ao do body, senão a resposta seria 403. Os endpoints de health ficam abertos.
 
+As rotas de carteira não têm providerId, então essa regra não se aplica a elas. Quem cria e consulta carteiras é a plataforma do cassino, não o provedor; em produção, essas rotas exigiriam uma permissão própria da plataforma, e um token de provedor seria recusado com 403.
+
 ## 8. Limitações
 
 - Uma mesma carteira processa uma transação por vez, por causa do lock.
