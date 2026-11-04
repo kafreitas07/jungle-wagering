@@ -1,5 +1,6 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'bun:test';
-import { ConfigError, loadEnv } from '../../../src/infrastructure/config/env';
+import { ConfigError, ENV_VARIABLES, loadEnv } from '../../../src/infrastructure/config/env';
 
 const base = { DATABASE_URL: 'postgres://wagering:wagering@localhost:5440/wagering_test' };
 
@@ -150,5 +151,39 @@ describe('FAULT_INJECTION is allowed only under NODE_ENV=test', () => {
 
   test('an invalid value is still reported as invalid', () => {
     expect(() => loadEnv({ ...base, NODE_ENV: 'test', FAULT_INJECTION: 'explode' })).toThrow(/FAULT_INJECTION/);
+  });
+});
+
+describe('.env.example', () => {
+  const text = readFileSync(new URL('../../../.env.example', import.meta.url), 'utf8');
+  const documented = (name: string) => new RegExp(`^#? ?${name}=`, 'm').test(text);
+  const active = Object.fromEntries(
+    text
+      .split('\n')
+      .filter((line) => /^[A-Z][A-Z0-9_]*=/.test(line))
+      .map((line) => [line.slice(0, line.indexOf('=')), line.slice(line.indexOf('=') + 1)]),
+  );
+
+  test('lists every variable the application reads', () => {
+    expect(ENV_VARIABLES.filter((name) => !documented(name))).toEqual([]);
+  });
+
+  test('every active line is a variable the application knows (no stale names)', () => {
+    const known = new Set([...ENV_VARIABLES, 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY']);
+    expect(Object.keys(active).filter((name) => !known.has(name))).toEqual([]);
+  });
+
+  test('loads as it is, and gives the defaults the code documents', () => {
+    const config = loadEnv(active);
+
+    expect(config.port).toBe(3100);
+    expect(config.outbox.batchSize).toBe(25);
+    expect(config.faultInjection).toBeUndefined();
+    expect(config.runners).toEqual({ http: true, sqsConsumer: true, outboxPublisher: true, pendingWorker: true });
+  });
+
+  test('keeps the test-only variables commented out, so a copied .env cannot arm the crash point', () => {
+    expect(Object.keys(active)).not.toContain('FAULT_INJECTION');
+    expect(Object.keys(active)).not.toContain('NODE_ENV');
   });
 });

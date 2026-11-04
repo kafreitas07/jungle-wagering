@@ -256,6 +256,17 @@ describe('business rejections are persisted (TXN-07, TXN-08, REV-*)', () => {
 
     await expectRejection(wallet, second, 'REFERENCE_ALREADY_REVERSED', '1000.00');
   });
+
+  test('REFERENCE_ALREADY_REVERSED: the other order too, ROLLBACK first and REFUND second', async () => {
+    const wallet = await newWallet();
+    await send(wallet, { externalTransactionId: 'bet-twice-rb' });
+    const first = await send(wallet, { kind: 'ROLLBACK', referenceExternalTransactionId: 'bet-twice-rb' });
+    expect(first.transaction.status).toBe('PROCESSED');
+
+    const second = await send(wallet, { kind: 'REFUND', referenceExternalTransactionId: 'bet-twice-rb' });
+
+    await expectRejection(wallet, second, 'REFERENCE_ALREADY_REVERSED', '1000.00');
+  });
 });
 
 describe('reversals (REV-01..10)', () => {

@@ -42,8 +42,6 @@ const BY_APPLICATION_CODE: Record<string, { status: number; message: string }> =
   WALLET_ALREADY_EXISTS: { status: 409, message: 'The player already has a wallet in this currency' },
   IDEMPOTENCY_KEY_REUSED: { status: 409, message: 'The idempotency key was already used with a different payload' },
   EXTERNAL_ID_CONFLICT: { status: 409, message: 'The external transaction id already exists under another idempotency key' },
-  WALLET_PLAYER_MISMATCH: { status: 422, message: 'The wallet does not belong to the informed player' },
-  CURRENCY_MISMATCH: { status: 422, message: 'The wallet does not hold the informed currency' },
   INVALID_LEDGER_QUERY: { status: 400, message: 'Invalid ledger query' },
   CONCURRENCY_CONFLICT: { status: 503, message: 'Concurrent changes prevented the operation; send the same request again' },
 };

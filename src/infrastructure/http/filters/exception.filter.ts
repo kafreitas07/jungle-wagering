@@ -1,5 +1,6 @@
 import { type ArgumentsHost, Catch, type ExceptionFilter } from '@nestjs/common';
 import { type MappedError, mapError } from '../http-errors';
+import { safeDetail } from '../../health/dependency-probes';
 
 interface HttpResponse {
   status(code: number): { json(body: unknown): unknown };
@@ -15,7 +16,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     if (mapped.status >= 500 && mapped.status !== 503) {
       // Server side only: the body below never carries the message, stack or SQL.
-      console.error(JSON.stringify({ level: 'error', message: 'unhandled error', errorName: (error as Error)?.name, errorMessage: (error as Error)?.message }));
+      console.error(JSON.stringify({ level: 'error', message: 'unhandled error', errorName: (error as Error)?.name, errorMessage: safeDetail(error) }));
     }
     if (mapped.retryAfter !== undefined) {
       response.setHeader('Retry-After', String(mapped.retryAfter));

@@ -139,7 +139,8 @@ describe('ReconcileWallet: divergence is reported, never fixed (REC-02)', () => 
     await useCase.execute(wallet.id);
 
     expect(metrics.total('reconciliation_mismatches_total')).toBe(2);
-    expect(JSON.stringify(logger.entries)).not.toMatch(/1000|1\.00|playerId/);
+    // The wallet id is a random UUID that may contain digits like "1000" by chance: look at everything but the id.
+    expect(JSON.stringify(logger.entries).replaceAll(wallet.id, '<wallet>')).not.toMatch(/1000|1\.00|playerId/);
   });
 });
 

@@ -63,7 +63,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | Uso de `FAILED` | Transação já persistida (`PENDING_REFERENCE`) cujo reprocessamento sofre erro permanente não-negocial (ex.: estado inconsistente detectado, exceção não classificada após esgotar retries) → `FAILED` com `failureCode` `PROCESSING_FAILED`, auditável, evento `WagerTransactionRejected` **não** é emitido (é falha nossa, não regra de negócio) — métrica + log de erro. | Enunciado define FAILED como erro permanente de infra auditável; o único lugar onde a transação já existe e o erro é nosso é o worker. | y |
 | Mesmo `messageId` SQS com payload diferente | Enviar a mensagem para `wager-transactions-dlq.fifo`, fazer ack, log `warn` e incrementar `inbox_payload_conflict_total`; nada é processado. | A inbox é por `(consumerName, messageId)`; reprocessar quebraria a dedup. Mandar para a DLQ preserva a evidência para investigação (só ack a descartaria). | y |
 | Mensagem SQS malformada (JSON inválido, schema inválido, `kind=OPENING`) | Erro permanente → não faz ack; a redrive policy da fila move para a DLQ após `maxReceiveCount=5`. Mensagem malformada é enviada imediatamente para a DLQ (sem esperar 5 recebimentos) e depois recebe ack. | Seção 10: permanente → DLQ. Envio explícito evita bloquear o message group FIFO por 5 ciclos de visibilidade. | y |
-| Retentativa transitória no consumidor SQS | Sem ack + `ChangeMessageVisibility` com backoff exponencial (base 2 s, teto 60 s); após `maxReceiveCount=5` a redrive policy envia para a DLQ. | Retry nativo do SQS sobrevive a crash do consumidor; limite explícito antes da DLQ. | y |
+| Retentativa transitória no consumidor SQS | Sem ack + `ChangeMessageVisibility` com backoff exponencial de `min(2^n · 2 s, 60 s)`, com `n` = número de recebimentos da mensagem (4, 8, 16, 32 e 60 s); após `maxReceiveCount=5` a redrive policy envia para a DLQ. | Retry nativo do SQS sobrevive a crash do consumidor; limite explícito antes da DLQ. | y |
 | Filas de eventos | Outbox publica em `wallet-events.fifo`, `MessageGroupId = walletId`, `MessageDeduplicationId = eventId`. Filas de entrada também usam `MessageGroupId = walletId`. | Ordenação por wallet é otimização; dedup do broker reduz duplicatas, mas consumidor continua deduplicando por `eventId`. | y (ajuste 7) |
 | Retry da outbox | Sem limite de tentativas (nunca descarta evento confirmado); backoff exponencial base 1 s, teto 60 s; `outbox_lag_seconds` e gauge `outbox_messages_high_attempts` (pendentes com `attempts >=` limiar configurável, default 10). | Invariante "não perder eventos confirmados" proíbe descartar; lag e contagem de mensagens com muitas tentativas sinalizam o problema operacionalmente. | y |
 | Ledger: ordem e paginação | Cada lançamento guarda `wallet_version` (versão da wallet **após** o lançamento), `UNIQUE (wallet_id, wallet_version)`. Paginação ordenada por `wallet_version` **decrescente**; cursor = base64url opaco de `{v: wallet_version}`; `limit` default 50, máx. 200. | `wallet_version` é monotônica por wallet e estável → cursor estável; unique prova no schema que não há dois lançamentos para a mesma versão (sem lost update). | y (ajuste 5) |
@@ -228,9 +228,9 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 2. The system SHALL serializar mudanças de saldo por `walletId`, sem lock global compartilhado entre wallets.
 3. WHEN wallets distintas recebem operações em paralelo THEN the system SHALL processá-las sem serialização mútua e com saldo final correto em cada uma.
 4. WHEN 3+ processos da aplicação processam operações da mesma wallet THEN the system SHALL manter saldo == ledger e nenhum débito/crédito duplicado.
-5. IF ocorre conflito de concorrência (estouro de `lock_timeout`, serialization failure, `UPDATE … WHERE version = :expected` afetando 0 linhas) THEN the system SHALL repetir a operação com limite e backoff, e contar em `lock_conflicts_total`.
+5. IF ocorre conflito de concorrência (estouro de `lock_timeout`, serialization failure, `UPDATE … WHERE version = :expected` afetando 0 linhas) THEN the system SHALL repetir a operação inteira, em nova transação, até 3 vezes, com espera de 20, 60 e 180 ms (±25% de jitter), e contar cada repetição em `lock_conflicts_total`.
 6. WHEN uma mudança de saldo é aplicada THEN the system SHALL adquirir `SELECT … FOR UPDATE` na wallet com `lock_timeout` curto e gravar com `UPDATE … WHERE version = :expected`.
-7. IF o limite de retries de concorrência se esgota THEN the system SHALL responder 503 `CONCURRENCY_CONFLICT` com `Retry-After`, sem efeito parcial.
+7. IF as 3 repetições de concorrência se esgotam THEN the system SHALL responder 503 `CONCURRENCY_CONFLICT` com `Retry-After`, sem efeito parcial.
 8. The system SHALL garantir no schema que não existem dois lançamentos com o mesmo `(wallet_id, wallet_version)`.
 
 **Independent Test**: testes de concorrência 13.1–13.4 com paralelismo real e reconciliação ao final.
@@ -270,7 +270,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 3. WHEN `messageId` já processado é recebido THEN the system SHALL fazer ack sem reprocessar e incrementar `inbox_duplicates_total`.
 4. The system SHALL fazer ack somente após o commit da transação SQL.
 5. WHEN o resultado é rejeição de negócio THEN the system SHALL persistir `REJECTED` e fazer ack.
-6. IF ocorre erro transitório (Postgres indisponível, conflito de lock esgotado) THEN the system SHALL não fazer ack e alterar a visibilidade com backoff exponencial.
+6. IF ocorre erro transitório (Postgres indisponível, conflito de lock esgotado) THEN the system SHALL não fazer ack e alterar a visibilidade com backoff exponencial `min(2^n · 2 s, 60 s)`, `n` = número de recebimentos (4, 8, 16, 32, 60 s), e no último recebimento permitido (`maxReceiveCount`) devolver a mensagem com visibilidade 0 para a fila movê-la à DLQ.
 7. IF a mensagem é recebida mais que `maxReceiveCount = 5` vezes THEN a fila SHALL movê-la para `wager-transactions-dlq.fifo` (redrive policy) e o sistema SHALL contar em `dlq_messages_total`.
 8. IF a mensagem é malformada ou permanentemente inválida THEN the system SHALL enviá-la à DLQ e fazer ack.
 9. WHEN o worker morre depois do commit e antes do ack THEN a redelivery SHALL ser detectada pela inbox/idempotência sem duplicar efeito.
@@ -336,6 +336,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 1. The system SHALL usar o mesmo mapeamento em todos os endpoints: 201 processado/criado; 202 aceito pendente; 400 payload inválido; 404 recurso inexistente em consultas; 409 conflito (idempotência, external id, wallet duplicada); 422 rejeição de regra de negócio; 503 falha transitória (com `Retry-After`); 500 erro inesperado.
 2. The system SHALL retornar corpo de erro `{ "failureCode": string, "message": string, "details"?: [...] }`, com `failureCode` da taxonomia documentada.
 3. IF PostgreSQL ou SQS está indisponível durante uma requisição THEN the system SHALL responder 503 `DEPENDENCY_UNAVAILABLE` com `Retry-After`.
+4. WHEN a requisição de uma operação (mesma `Idempotency-Key` e mesmo conteúdo) encontra a transação persistida em `FAILED` THEN the system SHALL responder 500 com `failureCode` `PROCESSING_FAILED`, `status` `FAILED`, o `transactionId` original e `idempotentReplay: true`, sem efeito no saldo; a consulta `GET` da mesma transação continua respondendo 200 com `status` `FAILED` e `failureCode` `PROCESSING_FAILED`. Reenviar a mesma operação devolve sempre o mesmo resultado (o estado é terminal); a correção é do suporte.
 
 **Independent Test**: um teste e2e por classe de status.
 
@@ -349,7 +350,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 
 **Acceptance Criteria**:
 
-1. The system SHALL emitir logs JSON contendo, quando aplicável, `correlationId`, `messageId`, `transactionId`, `walletId`, `providerId`.
+1. The system SHALL emitir logs JSON contendo, quando aplicável, `correlationId`, `messageId`, `transactionId`, `walletId`, `providerId`. "Aplicável" significa: `correlationId` em toda linha emitida dentro de uma requisição HTTP, de uma mensagem SQS ou do tratamento de uma pendência (a linha por requisição `request completed` traz método, caminho sem query, status e duração); `messageId` em toda linha do tratamento de uma mensagem SQS; `walletId`, `transactionId` e `providerId` nas linhas que dizem respeito a uma carteira, a uma transação ou a um provedor conhecidos no ponto do log, passados explicitamente por quem loga.
 2. The system SHALL não logar `amount`, saldos, `playerId` nem payloads completos.
 3. WHEN requisição HTTP chega com `X-Correlation-Id` THEN the system SHALL propagá-lo para logs e eventos; caso ausente SHALL gerar um UUID. Mensagens SQS usam `messageId` como `correlationId` quando ausente.
 4. The system SHALL expor em `GET /metrics` (Prometheus): `wager_transactions_total{kind,status}`, `idempotent_replays_total`, `idempotency_conflicts_total`, `inbox_duplicates_total`, `retries_total{reason}`, `dlq_messages_total`, `lock_conflicts_total`, `outbox_lag_seconds`, `outbox_pending`, `outbox_messages_high_attempts` (as três métricas da outbox vêm do banco: agregar com `max()` entre réplicas, nunca `sum()`), `inbox_payload_conflict_total`, `processing_duration_seconds` (histograma), `reconciliation_mismatches_total`.
@@ -423,7 +424,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 1. WHEN `docker compose up` é executado THEN the system SHALL subir PostgreSQL, LocalStack (filas `wager-transactions.fifo`, `wager-transactions-dlq.fifo` com redrive, `wallet-events.fifo`) e a aplicação com migrations aplicadas.
 2. WHERE o perfil de escala é usado (`docker compose up --scale app=3`) the system SHALL rodar 3 instâncias sem conflito de porta.
 3. The system SHALL ter `README.md` com pré-requisitos, setup, comandos de execução e de teste.
-4. The system SHALL ter `ARCHITECTURE.md` com: escolha do ORM e mapeamento do `Money`, estratégia transacional e de concorrência, idempotência e algoritmo de hash, mapeamento HTTP, taxonomia de `failureCode`, transições de estado, interpretação da regra 7.4, política de `PENDING_REFERENCE`, outbox/inbox, desenho de auth com Keycloak, trade-offs e limitações; toda nova decisão de arquitetura entra no `ARCHITECTURE.md` com motivo e trade-off.
+4. The system SHALL ter `ARCHITECTURE.md` com as decisões, os trade-offs e as limitações: escolha do ORM e mapeamento do `Money`, estratégia de concorrência, idempotência e algoritmo de hash, interpretação da regra 7.4, política de `PENDING_REFERENCE`, outbox/inbox, desenho de auth com Keycloak, e limitações. A taxonomia de `failureCode`, as transições de estado e o mapeamento HTTP ficam neste `spec.md` (seção "Failure Code Taxonomy", critérios TXN-11 e TXN-12 e a story "Contrato de erros HTTP"). Toda nova decisão de arquitetura entra no `ARCHITECTURE.md` com motivo e trade-off.
 5. The system SHALL manter no `.gitignore` `instrucoes-teste.md`, `CLAUDE.md`, `.claude/`, `.env` e `.env.*` (exceto `!.env.example`), e SHALL versionar `.specs/` (não ignorada).
 
 **Independent Test**: clone limpo + README → testes verdes.
@@ -456,7 +457,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | Transitório | 503 | Reenviar igual após `Retry-After` | `DEPENDENCY_UNAVAILABLE`, `CONCURRENCY_CONFLICT` |
 | Auth (extensão) | 403 | Corrigir credencial | `PROVIDER_IDENTITY_MISMATCH` |
 | Inesperado | 500 | Reenviar igual (idempotente) | `INTERNAL_ERROR` |
-| Falha permanente interna (só via worker) | — | Suporte | `PROCESSING_FAILED` (status `FAILED`) |
+| Falha permanente interna (só via worker) | 500 no replay da operação; 200 na consulta | Suporte (reenviar devolve o mesmo resultado) | `PROCESSING_FAILED` (status `FAILED`) |
 
 ---
 
@@ -567,6 +568,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | API-01 | P1: Contrato de erros HTTP | Tasks (T27) | Done |
 | API-02 | P1: Contrato de erros HTTP | Tasks (T27) | Done |
 | API-03 | P1: Contrato de erros HTTP | Tasks (T27) | Done |
+| API-04 | P1: Contrato de erros HTTP | Tasks (T27, T30) | Done |
 | OBS-01 | P1: Observabilidade e health | Tasks (T41) | Done |
 | OBS-02 | P1: Observabilidade e health | Tasks (T41) | Done |
 | OBS-03 | P1: Observabilidade e health | Tasks (T41) | Done |
@@ -576,7 +578,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | OBS-07 | P1: Observabilidade e health | Tasks (T26, T42) | Done |
 | AUTH-01 | P1: Extensão de autenticação | Tasks (T28, T29) | Done |
 | AUTH-02 | P1: Extensão de autenticação | Tasks (T28, T30) | Done |
-| AUTH-03 | P1: Extensão de autenticação | Tasks (T46) | Pending |
+| AUTH-03 | P1: Extensão de autenticação | Tasks (T46) | Done |
 | DB-01 | P1: Schema e migrations | Tasks (T13, T15) | Done |
 | DB-02 | P1: Schema e migrations | Tasks (T14, T15) | Done |
 | DB-03 | P1: Schema e migrations | Tasks (T16, T17) | Done |
@@ -586,15 +588,15 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | TEST-03 | P1: Testes obrigatórios | Tasks (T31, T32, T40) | Done |
 | TEST-04 | P1: Testes obrigatórios | Tasks (T15, T34) | Done |
 | TEST-05 | P1: Testes obrigatórios | Tasks (T1, T2, T13) | Done |
-| DOC-01 | P2: Ambiente e documentação | Tasks (T2, T35, T43) | Pending |
-| DOC-02 | P2: Ambiente e documentação | Tasks (T43) | Pending |
-| DOC-03 | P2: Ambiente e documentação | Tasks (T45) | Pending |
-| DOC-04 | P2: Ambiente e documentação | Tasks (T46) | Pending |
+| DOC-01 | P2: Ambiente e documentação | Tasks (T2, T35, T43) | Done |
+| DOC-02 | P2: Ambiente e documentação | Tasks (T43) | Done |
+| DOC-03 | P2: Ambiente e documentação | Tasks (T45) | Done |
+| DOC-04 | P2: Ambiente e documentação | Tasks (T46) | Done |
 | DOC-05 | P2: Ambiente e documentação | Tasks (T1) | Done |
 
 IDs individuais = prefixo + número do critério na story (ex.: `REV-08` = critério 8 de Reversões).
 
-**Coverage:** 127 critérios, 127 mapeados para tasks (ver `tasks.md`).
+**Coverage:** 128 critérios, 128 mapeados para tasks (ver `tasks.md`).
 
 ---
 

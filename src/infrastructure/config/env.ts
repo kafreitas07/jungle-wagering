@@ -61,6 +61,9 @@ const envSchema = z
     }
   });
 
+/** Every variable the application reads. `.env.example` must list all of them (a test checks). */
+export const ENV_VARIABLES: readonly string[] = Object.keys(envSchema.shape);
+
 export interface AppConfig {
   readonly port: number;
   readonly logLevel: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' | 'silent';

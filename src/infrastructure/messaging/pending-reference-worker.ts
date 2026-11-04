@@ -5,6 +5,7 @@ import type { ReprocessPendingReference } from '../../application/use-cases/repr
 import { runWithLogScope } from '../observability/log-context';
 import { isDependencyFailure } from '../dependency-failure';
 import { PollingLoop } from './polling-loop';
+import { safeDetail } from '../health/dependency-probes';
 
 type Counters = { -readonly [K in keyof WorkerRound]: WorkerRound[K] };
 
@@ -95,7 +96,7 @@ export class PendingReferenceWorker {
       transactionId: target.id,
       walletId: target.walletId,
       errorName: (error as Error)?.name,
-      errorMessage: (error as Error)?.message,
+      errorMessage: safeDetail(error),
     });
     try {
       if (await this.useCase.markFailed(target)) {

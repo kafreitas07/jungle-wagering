@@ -120,7 +120,7 @@ describe('what never reaches a log line (OBS-02)', () => {
 });
 
 describe('correlation id (OBS-03)', () => {
-  const request = (headers: Record<string, string | string[]> = {}) => ({ headers, method: 'GET', originalUrl: '/wallets/w1?token=secret' });
+  const request = (headers: Record<string, string | string[]> = {}, originalUrl = '/wallets/w1?token=secret') => ({ headers, method: 'GET', originalUrl });
   const response = () => {
     const headers: Record<string, string> = {};
     let finish: () => void = () => {};
@@ -173,5 +173,26 @@ describe('correlation id (OBS-03)', () => {
     expect(line).toMatchObject({ message: 'request completed', correlationId: 'c-9', method: 'GET', path: '/wallets/w1', status: 422 });
     expect(typeof line.durationMs).toBe('number');
     expect(out.lines[0]).not.toContain('secret');
+  });
+
+  test.each([['/health/live'], ['/health/ready'], ['/metrics'], ['/metrics?format=text']])('%s gets the correlation id but no request line', (url) => {
+    const out = collector();
+    const req = request({}, url);
+    const res = response();
+    correlationMiddleware(createLogger({ level: 'info', destination: out.destination }))(req, res, () => {});
+    res.end();
+
+    expect(res.headers['X-Correlation-Id']).toMatch(/^[0-9a-f-]{36}$/);
+    expect(out.lines).toHaveLength(0);
+  });
+
+  test.each([['/health'], ['/health/ready/extra'], ['/wallets/w1/metrics'], ['/wagering/transactions']])('%s still gets its request line', (url) => {
+    const out = collector();
+    const res = response();
+    correlationMiddleware(createLogger({ level: 'info', destination: out.destination }))(request({}, url), res, () => {});
+    res.end();
+
+    expect(out.parsed()).toHaveLength(1);
+    expect(out.parsed()[0]).toMatchObject({ message: 'request completed', path: url });
   });
 });

@@ -8,9 +8,7 @@ import {
   InvalidLedgerQueryError,
   TransactionNotFoundError,
   WalletAlreadyExistsError,
-  WalletCurrencyMismatchError,
   WalletNotFoundError,
-  WalletPlayerMismatchError,
 } from '../../../../src/application/errors/application-errors';
 import { OptimisticLockError, ProviderIdentityMismatchError } from '../../../../src/application/ports';
 import { InvalidMoneyError } from '../../../../src/domain/errors/domain-errors';
@@ -25,8 +23,6 @@ describe('mapError: one table for every endpoint (API-01, API-02)', () => {
     ['wallet already exists', new WalletAlreadyExistsError('p', 'BRL'), 409, 'WALLET_ALREADY_EXISTS'],
     ['idempotency key reused', new IdempotencyConflictError('p', 'k'), 409, 'IDEMPOTENCY_KEY_REUSED'],
     ['external id conflict', new ExternalIdConflictError('p', 'e'), 409, 'EXTERNAL_ID_CONFLICT'],
-    ['player mismatch', new WalletPlayerMismatchError('w'), 422, 'WALLET_PLAYER_MISMATCH'],
-    ['currency mismatch', new WalletCurrencyMismatchError('w', 'USD'), 422, 'CURRENCY_MISMATCH'],
     ['invalid ledger query', new InvalidLedgerQueryError(500), 400, 'INVALID_LEDGER_QUERY'],
     ['provider identity', new ProviderIdentityMismatchError('p'), 403, 'PROVIDER_IDENTITY_MISMATCH'],
     ['domain error', new InvalidMoneyError('bad'), 400, 'VALIDATION_ERROR'],

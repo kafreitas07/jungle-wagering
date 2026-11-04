@@ -15,6 +15,7 @@ import { type WagerTransactionRequestedMessage, wagerTransactionRequestedSchema 
 import { runWithLogScope } from '../observability/log-context';
 import { InFlight, isFinalReceive, visibilityBackoffSeconds } from './sqs-consumer-resilience';
 import type { ReceivedMessage, SqsAdapter } from './sqs.adapter';
+import { safeDetail } from '../health/dependency-probes';
 
 /** The inbox key. One consumer of one queue, so a message id is unique within it. */
 export const WAGER_CONSUMER_NAME = 'wager-transactions-consumer';
@@ -127,7 +128,7 @@ export class SqsConsumer {
         if (!this.running) {
           return;
         }
-        this.logger.error('receive failed', { errorName: (error as Error)?.name, errorMessage: (error as Error)?.message });
+        this.logger.error('receive failed', { errorName: (error as Error)?.name, errorMessage: safeDetail(error) });
         await sleep(1000, this.abort.signal);
         continue;
       }
@@ -241,7 +242,7 @@ export class SqsConsumer {
         sqsMessageId: message.sqsMessageId,
         action: disposition.action,
         errorName: (error as Error)?.name,
-        errorMessage: (error as Error)?.message,
+        errorMessage: safeDetail(error),
       });
       return false;
     }
@@ -266,7 +267,7 @@ export class SqsConsumer {
       receiveCount: message.receiveCount,
       willDeadLetter: final,
       errorName: (error as Error)?.name,
-      errorMessage: (error as Error)?.message,
+      errorMessage: safeDetail(error),
     });
     this.metrics.increment('retries_total', { reason: 'sqs_redelivery' });
     if (final) {
