@@ -2,8 +2,11 @@ import { ConcurrencyConflictError } from '../../application/errors/application-e
 import { type LoggerPort, type MetricsPort, NoopLogger, NoopMetrics } from '../../application/ports';
 import { isTransientConcurrencyError } from '../../application/services/concurrency-retry';
 import type { ReprocessPendingReference } from '../../application/use-cases/reprocess-pending-reference';
+import { runWithLogScope } from '../observability/log-context';
 import { isDependencyFailure } from '../dependency-failure';
 import { PollingLoop } from './polling-loop';
+
+type Counters = { -readonly [K in keyof WorkerRound]: WorkerRound[K] };
 
 export interface WorkerRound {
   readonly due: number;
@@ -51,26 +54,40 @@ export class PendingReferenceWorker {
 
   async runOnce(): Promise<WorkerRound> {
     const due = await this.useCase.findDue(this.options.batchSize);
-    const round = { due: due.length, processed: 0, rejected: 0, stillPending: 0, skipped: 0, failed: 0, deferred: 0 };
+    const round: Counters = { due: due.length, processed: 0, rejected: 0, stillPending: 0, skipped: 0, failed: 0, deferred: 0 };
 
     for (const target of due) {
-      try {
-        const result = await this.useCase.execute(target);
-        if (result === 'processed') round.processed += 1;
-        else if (result === 'rejected') round.rejected += 1;
-        else if (result === 'pending') round.stillPending += 1;
-        else round.skipped += 1;
-      } catch (error) {
-        if (isTransient(error)) {
-          round.deferred += 1;
-          this.logger.warn('pending reference deferred', { transactionId: target.id, errorName: (error as Error)?.name });
-          continue;
-        }
-        round.failed += 1;
-        await this.fail(target, error);
-      }
+      await runWithLogScope({ correlationId: Bun.randomUUIDv7(), transactionId: target.id, walletId: target.walletId }, () =>
+        this.handleTarget(target, round),
+      );
     }
     return round;
+  }
+
+  private async handleTarget(target: { id: string; walletId: string; kind: string }, round: Counters): Promise<void> {
+    try {
+      const result = await this.useCase.execute(target);
+      if (result === 'processed') {
+        round.processed += 1;
+        this.metrics.increment('wager_transactions_total', { kind: target.kind, status: 'PROCESSED' });
+      } else if (result === 'rejected') {
+        round.rejected += 1;
+        this.metrics.increment('wager_transactions_total', { kind: target.kind, status: 'REJECTED' });
+      } else if (result === 'pending') {
+        round.stillPending += 1;
+        this.metrics.increment('retries_total', { reason: 'pending_reference' });
+      } else {
+        round.skipped += 1;
+      }
+    } catch (error) {
+      if (isTransient(error)) {
+        round.deferred += 1;
+        this.logger.warn('pending reference deferred', { transactionId: target.id, errorName: (error as Error)?.name });
+        return;
+      }
+      round.failed += 1;
+      await this.fail(target, error);
+    }
   }
 
   private async fail(target: { id: string; walletId: string; kind: string }, error: unknown): Promise<void> {

@@ -12,6 +12,7 @@ export function testConfig(overrides: Record<string, string | undefined> = {}): 
     DATABASE_URL: testDatabaseConfig().url,
     SQS_ENDPOINT: 'http://localhost:4566',
     AWS_REGION: 'us-east-1',
+    LOG_LEVEL: 'silent',
     ...overrides,
   });
 }

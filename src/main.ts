@@ -1,13 +1,15 @@
 import { startApplication } from './infrastructure/bootstrap';
 import { ConfigError, loadEnv } from './infrastructure/config/env';
+import { createLogger } from './infrastructure/observability/logger';
 
 async function main(): Promise<void> {
   const config = loadEnv();
+  const logger = createLogger({ level: config.logLevel });
   const running = await startApplication(config);
-  console.log(JSON.stringify({ level: 'info', message: 'application started', runners: config.runners, started: running.runners, httpPort: running.httpPort }));
+  logger.info('application started', { runners: config.runners, started: running.runners, httpPort: running.httpPort });
 
   const shutdown = async (signal: string) => {
-    console.log(JSON.stringify({ level: 'info', message: 'shutting down', signal }));
+    logger.info('shutting down', { signal });
     await running.stop();
     process.exit(0);
   };

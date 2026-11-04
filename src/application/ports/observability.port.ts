@@ -2,6 +2,7 @@ export type Labels = Readonly<Record<string, string>>;
 
 export type CounterName =
   | 'wager_transactions_total'
+  | 'wager_rejected_unpersisted_total'
   | 'idempotent_replays_total'
   | 'idempotency_conflicts_total'
   | 'inbox_duplicates_total'
