@@ -50,6 +50,8 @@ export async function spawnApp(options: SpawnOptions): Promise<AppProcess> {
   const proc = Bun.spawn(['bun', 'run', 'src/main.ts'], {
     env: {
       ...process.env,
+      NODE_ENV: 'test',
+      LOG_LEVEL: 'silent',
       APP_PORT: String(port),
       DATABASE_URL: testDatabaseConfig().url,
       SQS_ENDPOINT: 'http://localhost:4566',
