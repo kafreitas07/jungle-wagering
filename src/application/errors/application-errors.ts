@@ -81,3 +81,12 @@ export class InvalidLedgerQueryError extends ApplicationError {
     super(`Ledger limit must be an integer from 1 to 200, got ${limit}`);
   }
 }
+
+/** The producer reused a queue message id for a different payload. The message is evidence, not work. */
+export class InboxPayloadConflictError extends ApplicationError {
+  readonly code = 'INBOX_PAYLOAD_CONFLICT';
+
+  constructor(consumerName: string, messageId: string) {
+    super(`Message ${messageId} was already received by ${consumerName} with a different payload`);
+  }
+}

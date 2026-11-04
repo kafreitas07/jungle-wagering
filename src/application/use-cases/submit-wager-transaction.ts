@@ -1,23 +1,18 @@
 import {
   ExternalIdConflictError,
   IdempotencyConflictError,
+  InboxPayloadConflictError,
   WalletCurrencyMismatchError,
   WalletNotFoundError,
   WalletPlayerMismatchError,
 } from '../errors/application-errors';
-import {
-  WagerTransactionPendingReference,
-  WagerTransactionProcessed,
-  WagerTransactionRejected,
-  WalletBalanceChanged,
-} from '../../domain/messaging/integration-events';
 import type { EventContext } from '../../domain/messaging/integration-event';
-import { OutboxMessage } from '../../domain/messaging/outbox-message';
+import { InboxMessage } from '../../domain/messaging/inbox-message';
 import { Money, type MoneyProps } from '../../domain/money/money';
-import { WagerRules } from '../../domain/wager/wager-rules';
 import { type ReferenceRetryPolicy, type WagerKind, WagerTransaction } from '../../domain/wager/wager-transaction';
 import { type Clock, NoopMetrics, type TxRepositories, type UnitOfWork } from '../ports';
 import { ConcurrencyRetry } from '../services/concurrency-retry';
+import { applyWagerDecision } from '../services/apply-wager-decision';
 import { payloadHash } from '../services/payload-hash';
 
 export interface SubmitWagerTransactionCommand {
@@ -42,6 +37,15 @@ export interface SubmitResult {
   readonly replay: boolean;
 }
 
+/** Who sent which message: the inbox key `(consumerName, messageId)` and the hash of its payload. */
+export interface QueueMessageIdentity {
+  readonly consumerName: string;
+  readonly messageId: string;
+  readonly payloadHash: string;
+}
+
+export type QueueSubmitResult = { readonly duplicate: true } | ({ readonly duplicate: false } & SubmitResult);
+
 export interface SubmitWagerTransactionDependencies {
   readonly unitOfWork: UnitOfWork;
   readonly clock: Clock;
@@ -61,6 +65,31 @@ export class SubmitWagerTransaction {
   execute(command: SubmitWagerTransactionCommand): Promise<SubmitResult> {
     const money = Money.from(command.money);
     return this.retry.run(() => this.deps.unitOfWork.run((tx) => this.process(tx, command, money)));
+  }
+
+  /**
+   * The queue entry point. The inbox row is written first, in the same SQL transaction as the financial change and
+   * the outbox events, so "message handled" and "effect applied" commit together or not at all.
+   * `duplicate`: this message id was already handled with the same payload: nothing is done.
+   * A same-id/different-payload message throws `InboxPayloadConflictError`.
+   */
+  executeFromQueue(command: SubmitWagerTransactionCommand, inbox: QueueMessageIdentity): Promise<QueueSubmitResult> {
+    const money = Money.from(command.money);
+    return this.retry.run(() =>
+      this.deps.unitOfWork.run(async (tx): Promise<QueueSubmitResult> => {
+        const at = this.deps.clock.now();
+        const message = InboxMessage.receive({ ...inbox, at });
+        message.markProcessed(at);
+        const recorded = await tx.inbox.tryRecord(message);
+        if (recorded === 'duplicate') {
+          return { duplicate: true };
+        }
+        if (recorded === 'conflict') {
+          throw new InboxPayloadConflictError(inbox.consumerName, inbox.messageId);
+        }
+        return { duplicate: false, ...(await this.process(tx, command, money)) };
+      }),
+    );
   }
 
   private async process(tx: TxRepositories, command: SubmitWagerTransactionCommand, money: Money): Promise<SubmitResult> {
@@ -110,54 +139,7 @@ export class SubmitWagerTransaction {
       at,
     });
 
-    const reference =
-      command.referenceExternalTransactionId === undefined
-        ? undefined
-        : ((await tx.transactions.findByExternalId(command.providerId, command.referenceExternalTransactionId)) ?? undefined);
-    const alreadyReversed = reference === undefined ? false : await tx.transactions.hasProcessedReversal(reference.id);
-
-    const expectedVersion = wallet.version;
-    const outcome = WagerRules.decide({
-      wallet,
-      transaction,
-      ...(reference === undefined ? {} : { reference }),
-      alreadyReversed,
-      at,
-    });
-
-    switch (outcome.type) {
-      case 'PROCESSED': {
-        transaction.markProcessed({
-          balanceAfter: wallet.balance,
-          at,
-          ...(reference === undefined ? {} : { referenceTransactionId: reference.id }),
-        });
-        await tx.transactions.insert(transaction);
-        await this.publish(tx, WagerTransactionProcessed.from(transaction, context));
-        if (outcome.entry !== undefined) {
-          await tx.wallets.save(wallet, expectedVersion);
-          await tx.ledger.append(outcome.entry);
-          await this.publish(tx, WalletBalanceChanged.from(wallet, outcome.entry, context));
-        }
-        break;
-      }
-      case 'REJECTED': {
-        transaction.reject({ failureCode: outcome.code, balanceAfter: wallet.balance, at });
-        await tx.transactions.insert(transaction);
-        await this.publish(tx, WagerTransactionRejected.from(transaction, context));
-        break;
-      }
-      case 'PENDING_REFERENCE': {
-        transaction.markPendingReference({ balanceAfter: wallet.balance, at, policy: this.deps.referencePolicy });
-        await tx.transactions.insert(transaction);
-        await this.publish(tx, WagerTransactionPendingReference.from(transaction, context));
-        break;
-      }
-    }
+    await applyWagerDecision({ tx, wallet, transaction, mode: 'create', context, policy: this.deps.referencePolicy, at });
     return { transaction, replay: false };
-  }
-
-  private publish(tx: TxRepositories, event: Parameters<typeof OutboxMessage.enqueue>[0]): Promise<void> {
-    return tx.outbox.enqueue(OutboxMessage.enqueue(event));
   }
 }
