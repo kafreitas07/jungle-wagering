@@ -13,7 +13,7 @@ import {
 import type { Wallet } from '../../../src/domain/wallet/wallet';
 import { closeTestOrm, getTestOrm } from '../../support/db';
 import { FakeClock, outboxEventTypes, testUnitOfWork } from '../../support/context';
-import { assertReconciled } from '../../support/reconcile';
+import { assertReconciledViaApp } from '../../support/reconcile';
 import { sql, uuid } from '../../support/sql';
 
 let orm: MikroORM;
@@ -72,7 +72,7 @@ describe('BET, WIN and LOSS (TXN-01..04)', () => {
       { direction: 'CREDIT', amount: '1000.00', after: '1000.00', wallet_version: 1 },
       { direction: 'DEBIT', amount: '25.00', after: '975.00', wallet_version: 2 },
     ]);
-    await assertReconciled(orm, [wallet.id]);
+    await assertReconciledViaApp(orm, [wallet.id]);
   });
 
   test('the ledger entry belongs to the transaction and carries the wallet version after the change', async () => {
@@ -96,7 +96,7 @@ describe('BET, WIN and LOSS (TXN-01..04)', () => {
     expect(loss.transaction.balanceAfter?.toString()).toBe('150.00');
     expect(await walletRow(wallet.id)).toEqual({ balance: '150.00', version: 3 });
     expect((await ledgerRows(wallet.id)).map((row) => row.direction)).toEqual(['CREDIT', 'DEBIT', 'CREDIT']);
-    await assertReconciled(orm, [wallet.id]);
+    await assertReconciledViaApp(orm, [wallet.id]);
   });
 
   test('a LOSS moves nothing: no ledger entry, same version, only a transaction event', async () => {
@@ -108,7 +108,7 @@ describe('BET, WIN and LOSS (TXN-01..04)', () => {
     expect(await walletRow(wallet.id)).toEqual({ balance: '100.00', version: 1 });
     expect(await ledgerRows(wallet.id)).toHaveLength(1);
     expect(await sql(orm, `select 1 from outbox_messages where aggregate_id = ? and event_type = 'WalletBalanceChanged' and (payload->'data'->>'transactionId') = ?`, [wallet.id, transaction.id])).toHaveLength(0);
-    await assertReconciled(orm, [wallet.id]);
+    await assertReconciledViaApp(orm, [wallet.id]);
   });
 
   test('a WIN without reference credits the balance', async () => {
@@ -117,7 +117,7 @@ describe('BET, WIN and LOSS (TXN-01..04)', () => {
     const { transaction } = await send(wallet, { kind: 'WIN', money: { amount: '15.50', currency: 'BRL' } });
 
     expect(transaction.balanceAfter?.toString()).toBe('25.50');
-    await assertReconciled(orm, [wallet.id]);
+    await assertReconciledViaApp(orm, [wallet.id]);
   });
 
   test('a BET of exactly the balance leaves 0.00 (the boundary is allowed)', async () => {
@@ -127,7 +127,7 @@ describe('BET, WIN and LOSS (TXN-01..04)', () => {
 
     expect(transaction.status).toBe('PROCESSED');
     expect(await walletRow(wallet.id)).toEqual({ balance: '0.00', version: 2 });
-    await assertReconciled(orm, [wallet.id]);
+    await assertReconciledViaApp(orm, [wallet.id]);
   });
 
   test('a processed BET emits WagerTransactionProcessed and WalletBalanceChanged for the wallet group', async () => {
@@ -173,7 +173,7 @@ describe('business rejections are persisted (TXN-07, TXN-08, REV-*)', () => {
     expect((await walletRow(wallet.id))?.balance).toBe(balanceBefore);
     expect(await sql(orm, 'select 1 from wallet_ledger_entries where transaction_id = ?', [transaction.id])).toHaveLength(0);
     expect(await sql(orm, `select 1 from outbox_messages where event_type = 'WagerTransactionRejected' and (payload->'data'->>'transactionId') = ?`, [transaction.id])).toHaveLength(1);
-    await assertReconciled(orm, [wallet.id]);
+    await assertReconciledViaApp(orm, [wallet.id]);
   }
 
   test('INSUFFICIENT_FUNDS: a BET above the balance', async () => {
@@ -269,7 +269,7 @@ describe('reversals (REV-01..10)', () => {
     expect(refund.transaction.referenceTransactionId).toBe(bet.transaction.id);
     expect(await walletRow(wallet.id)).toEqual({ balance: '1000.00', version: 3 });
     expect((await ledgerRows(wallet.id)).map((row) => row.direction)).toEqual(['CREDIT', 'DEBIT', 'CREDIT']);
-    await assertReconciled(orm, [wallet.id]);
+    await assertReconciledViaApp(orm, [wallet.id]);
   });
 
   test('a ROLLBACK of a BET credits the amount back', async () => {
@@ -279,7 +279,7 @@ describe('reversals (REV-01..10)', () => {
     const rollback = await send(wallet, { kind: 'ROLLBACK', referenceExternalTransactionId: 'bet-rb' });
 
     expect(rollback.transaction.balanceAfter?.toString()).toBe('1000.00');
-    await assertReconciled(orm, [wallet.id]);
+    await assertReconciledViaApp(orm, [wallet.id]);
   });
 
   test('a ROLLBACK of a WIN debits the amount', async () => {
@@ -291,7 +291,7 @@ describe('reversals (REV-01..10)', () => {
     expect(rollback.transaction.status).toBe('PROCESSED');
     expect(rollback.transaction.balanceAfter?.toString()).toBe('100.00');
     expect((await ledgerRows(wallet.id)).map((row) => row.direction)).toEqual(['CREDIT', 'CREDIT', 'DEBIT']);
-    await assertReconciled(orm, [wallet.id]);
+    await assertReconciledViaApp(orm, [wallet.id]);
   });
 
   test('a ROLLBACK of a processed REFUND debits what the refund credited', async () => {
@@ -303,7 +303,7 @@ describe('reversals (REV-01..10)', () => {
 
     expect(rollback.transaction.status).toBe('PROCESSED');
     expect(rollback.transaction.balanceAfter?.toString()).toBe('975.00');
-    await assertReconciled(orm, [wallet.id]);
+    await assertReconciledViaApp(orm, [wallet.id]);
   });
 
   test('a rejected reversal does not consume the reference: a correct one still works', async () => {
@@ -314,7 +314,7 @@ describe('reversals (REV-01..10)', () => {
     const ok = await send(wallet, { kind: 'REFUND', referenceExternalTransactionId: 'bet-retry' });
 
     expect(ok.transaction.status).toBe('PROCESSED');
-    await assertReconciled(orm, [wallet.id]);
+    await assertReconciledViaApp(orm, [wallet.id]);
   });
 });
 
@@ -332,7 +332,7 @@ describe('PENDING_REFERENCE (PREF-01)', () => {
     expect(await ledgerRows(wallet.id)).toHaveLength(1);
     expect(await sql(orm, 'select status, next_attempt_at is not null as scheduled from wager_transactions where id = ?', [transaction.id])).toEqual([{ status: 'PENDING_REFERENCE', scheduled: true }]);
     expect(await sql(orm, `select 1 from outbox_messages where event_type = 'WagerTransactionPendingReference' and (payload->'data'->>'transactionId') = ?`, [transaction.id])).toHaveLength(1);
-    await assertReconciled(orm, [wallet.id]);
+    await assertReconciledViaApp(orm, [wallet.id]);
   });
 
   test('a WIN that names a missing reference is also pending', async () => {
@@ -361,7 +361,7 @@ describe('inconsistent identity writes nothing (WAL-07, WAL-09)', () => {
     if (wallet !== undefined) {
       expect(await walletRow(wallet.id)).toEqual({ balance: '1000.00', version: 1 });
       expect(await outboxEventTypes(orm, wallet.id)).toHaveLength(2);
-      await assertReconciled(orm, [wallet.id]);
+      await assertReconciledViaApp(orm, [wallet.id]);
     }
   }
 
@@ -393,7 +393,7 @@ describe('concurrency (CONC-02, CONC-03, CONC-06)', () => {
     expect(results.every((r) => r.transaction.status === 'PROCESSED')).toBe(true);
     expect(await walletRow(wallet.id)).toEqual({ balance: '880.00', version: 13 });
     expect(await ledgerRows(wallet.id)).toHaveLength(13);
-    await assertReconciled(orm, [wallet.id]);
+    await assertReconciledViaApp(orm, [wallet.id]);
   });
 
   test('different wallets are processed in parallel and each reconciles', async () => {
@@ -404,7 +404,7 @@ describe('concurrency (CONC-02, CONC-03, CONC-06)', () => {
     for (const wallet of wallets) {
       expect(await walletRow(wallet.id)).toEqual({ balance: '400.00', version: 6 });
     }
-    await assertReconciled(orm, wallets.map((wallet) => wallet.id));
+    await assertReconciledViaApp(orm, wallets.map((wallet) => wallet.id));
   });
 
   test('concurrent BETs that exceed the balance: exactly the affordable ones pass, the rest are REJECTED', async () => {
@@ -415,6 +415,6 @@ describe('concurrency (CONC-02, CONC-03, CONC-06)', () => {
     expect(results.filter((r) => r.transaction.status === 'PROCESSED')).toHaveLength(3);
     expect(results.filter((r) => r.transaction.failureCode === 'INSUFFICIENT_FUNDS')).toHaveLength(2);
     expect(await walletRow(wallet.id)).toEqual({ balance: '10.00', version: 4 });
-    await assertReconciled(orm, [wallet.id]);
+    await assertReconciledViaApp(orm, [wallet.id]);
   });
 });

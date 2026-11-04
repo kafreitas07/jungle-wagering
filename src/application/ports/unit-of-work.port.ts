@@ -1,4 +1,5 @@
 import type { WalletLedgerEntry } from '../../domain/ledger/wallet-ledger-entry';
+import type { Money } from '../../domain/money/money';
 import type { InboxMessage } from '../../domain/messaging/inbox-message';
 import type { OutboxMessage } from '../../domain/messaging/outbox-message';
 import type { Wallet } from '../../domain/wallet/wallet';
@@ -29,6 +30,17 @@ export interface LedgerRepository {
   append(entry: WalletLedgerEntry): Promise<void>;
   /** Newest first (`wallet_version` descending). `beforeVersion` is exclusive. */
   listByWallet(walletId: string, options: { readonly beforeVersion?: number; readonly limit: number }): Promise<WalletLedgerEntry[]>;
+  /**
+   * The stored balance and the balance rebuilt from the ledger (Σ CREDIT − Σ DEBIT), read in one statement so both
+   * come from the same snapshot even while the wallet is being changed. `null` when the wallet does not exist.
+   */
+  reconciliationSnapshot(walletId: string): Promise<ReconciliationSnapshot | null>;
+}
+
+export interface ReconciliationSnapshot {
+  readonly storedBalance: Money;
+  readonly calculatedBalance: Money;
+  readonly checkedEntries: number;
 }
 
 /** `recorded`: first time. `duplicate`: same message, same payload. `conflict`: same message id, different payload. */

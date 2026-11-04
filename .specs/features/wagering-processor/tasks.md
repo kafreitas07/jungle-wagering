@@ -713,11 +713,11 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] `/health/live` responde 200 sem tocar dependências
-- [ ] `/health/ready` responde 200 com Postgres e LocalStack no ar
-- [ ] Com o Postgres indisponível → 503 com o detalhe da dependência; com a fila ausente ou o SQS fora → 503 com o detalhe do SQS
-- [ ] Runners desligados por env não sobem (`RUN_HTTP=false` não escuta porta)
-- [ ] Gate completo; ≥ 6 testes
+- [x] `/health/live` responde 200 sem tocar dependências
+- [x] `/health/ready` responde 200 com Postgres e LocalStack no ar
+- [x] Com o Postgres indisponível → 503 com o detalhe da dependência; com a fila ausente ou o SQS fora → 503 com o detalhe do SQS
+- [x] Runners desligados por env não sobem (`RUN_HTTP=false` não escuta porta)
+- [x] Gate completo; ≥ 6 testes
 
 **Tests**: integration
 **Gate**: full
@@ -735,10 +735,10 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Um teste e2e por classe: 201, 202, 400, 404, 409, 422, 503 com `Retry-After: 1` e 500
-- [ ] Falha de PostgreSQL ou SQS → 503 `DEPENDENCY_UNAVAILABLE`; `ConcurrencyConflict` → 503 `CONCURRENCY_CONFLICT`
-- [ ] Nenhuma mensagem de erro expõe stack ou SQL
-- [ ] Gate completo; ≥ 10 testes
+- [x] Um teste e2e por classe: 201, 202, 400, 404, 409, 422, 503 com `Retry-After: 1` e 500
+- [x] Falha de PostgreSQL ou SQS → 503 `DEPENDENCY_UNAVAILABLE`; `ConcurrencyConflict` → 503 `CONCURRENCY_CONFLICT`
+- [x] Nenhuma mensagem de erro expõe stack ou SQL
+- [x] Gate completo; ≥ 10 testes
 
 **Tests**: integration
 **Gate**: full
@@ -756,10 +756,10 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Com `AllowAllProviderIdentity` todas as rotas de wallets e wagering passam
-- [ ] Com um fake que nega → 403 `PROVIDER_IDENTITY_MISMATCH`
-- [ ] O guard lê o `providerId` do body de `POST /wagering/transactions`; `/health/*` e `/metrics` ficam fora do guard
-- [ ] Gate rápido passa; ≥ 4 testes
+- [x] Com `AllowAllProviderIdentity` todas as rotas de wallets e wagering passam
+- [x] Com um fake que nega → 403 `PROVIDER_IDENTITY_MISMATCH`
+- [x] O guard lê o `providerId` do body de `POST /wagering/transactions`; `/health/*` e `/metrics` ficam fora do guard
+- [x] Gate rápido passa; ≥ 4 testes
 
 **Tests**: unit
 **Gate**: quick
@@ -777,10 +777,10 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Criação 201 com `id`, `playerId`, `balance`, `version`; duplicada 409 `WALLET_ALREADY_EXISTS`
-- [ ] GET inexistente → 404 `WALLET_NOT_FOUND`; id malformado → 400
-- [ ] Ledger paginado com `nextCursor`; cursor inválido e `limit` fora de 1..200 → 400
-- [ ] Gate completo; ≥ 10 testes e2e
+- [x] Criação 201 com `id`, `playerId`, `balance`, `version`; duplicada 409 `WALLET_ALREADY_EXISTS`
+- [x] GET inexistente → 404 `WALLET_NOT_FOUND`; id malformado → 400
+- [x] Ledger paginado com `nextCursor`; cursor inválido e `limit` fora de 1..200 → 400
+- [x] Gate completo; ≥ 10 testes e2e
 
 **Tests**: integration
 **Gate**: full
@@ -798,11 +798,11 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Sem `Idempotency-Key` → 400 `IDEMPOTENCY_KEY_REQUIRED`
-- [ ] BET válida → 201 com `{transactionId, status, balance, idempotentReplay:false}`; replay → mesmo status com `idempotentReplay:true`
-- [ ] Rejeição de negócio → 422 com `failureCode`; PENDING_REFERENCE → 202; conflitos → 409
-- [ ] `OPENING`, `providerId = internal`, `0.00` em BET → 400; consultas por id e por id externo → 200/404
-- [ ] Gate completo; ≥ 15 testes e2e
+- [x] Sem `Idempotency-Key` → 400 `IDEMPOTENCY_KEY_REQUIRED`
+- [x] BET válida → 201 com `{transactionId, status, balance, idempotentReplay:false}`; replay → mesmo status com `idempotentReplay:true`
+- [x] Rejeição de negócio → 422 com `failureCode`; PENDING_REFERENCE → 202; conflitos → 409
+- [x] `OPENING`, `providerId = internal`, `0.00` em BET → 400; consultas por id e por id externo → 200/404
+- [x] Gate completo; ≥ 15 testes e2e
 
 **Tests**: integration
 **Gate**: full
@@ -822,10 +822,10 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] 50 requisições iguais: 1 transação, no máximo 1 lançamento, 50 respostas com o mesmo `transactionId` (1 `false`, 49 `true`)
-- [ ] 100.00 / 2×80.00: exatamente 1 PROCESSED, 1 `INSUFFICIENT_FUNDS`, saldo 20.00, 1 DEBIT — 20 execuções seguidas sem falha
-- [ ] Wallets distintas terminam com saldos corretos; exatamente uma reversão vence, a outra recebe `REFERENCE_ALREADY_REVERSED`
-- [ ] Todas as asserções são sobre estado final + `assertReconciled`; gate de build; ≥ 6 testes
+- [x] 50 requisições iguais: 1 transação, no máximo 1 lançamento, 50 respostas com o mesmo `transactionId` (1 `false`, 49 `true`)
+- [x] 100.00 / 2×80.00: exatamente 1 PROCESSED, 1 `INSUFFICIENT_FUNDS`, saldo 20.00, 1 DEBIT — 20 execuções seguidas sem falha
+- [x] Wallets distintas terminam com saldos corretos; exatamente uma reversão vence, a outra recebe `REFERENCE_ALREADY_REVERSED`
+- [x] Todas as asserções são sobre estado final + `assertReconciled`; gate de build; ≥ 6 testes
 
 **Tests**: concurrency
 **Gate**: build
@@ -843,9 +843,9 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] 3 processos em portas distintas processam N operações da mesma wallet sem débito ou crédito duplicado
-- [ ] Saldo final igual ao esperado e `assertReconciled` passa
-- [ ] Processos encerrados no `afterAll`; gate de build; ≥ 2 testes
+- [x] 3 processos em portas distintas processam N operações da mesma wallet sem débito ou crédito duplicado
+- [x] Saldo final igual ao esperado e `assertReconciled` passa
+- [x] Processos encerrados no `afterAll`; gate de build; ≥ 2 testes
 
 **Tests**: concurrency
 **Gate**: build
@@ -863,10 +863,10 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Wallet com operações → `consistent: true`, `difference 0.00`, `checkedEntries` correto
-- [ ] **Divergência forçada**: alterar `wallets.balance` por SQL direto → `consistent: false`, log `error` e `reconciliation_mismatches_total` incrementada (via `LoggerPort` e `MetricsPort` de teste), e o saldo **permanece** o valor alterado (nada é corrigido)
-- [ ] Wallet inexistente → `WalletNotFound`
-- [ ] Gate completo; ≥ 5 testes
+- [x] Wallet com operações → `consistent: true`, `difference 0.00`, `checkedEntries` correto
+- [x] **Divergência forçada**: alterar `wallets.balance` por SQL direto → `consistent: false`, log `error` e `reconciliation_mismatches_total` incrementada (via `LoggerPort` e `MetricsPort` de teste), e o saldo **permanece** o valor alterado (nada é corrigido)
+- [x] Wallet inexistente → `WalletNotFound`
+- [x] Gate completo; ≥ 5 testes
 
 **Tests**: integration
 **Gate**: full
@@ -884,9 +884,9 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] 200 com `walletId`, `storedBalance`, `calculatedBalance`, `difference`, `consistent`, `checkedEntries`; inexistente → 404
-- [ ] Os testes de T31 e T32 passam a asserir a reconciliação pelo endpoint
-- [ ] Gate de build passa: `bun run test`; ≥ 4 testes
+- [x] 200 com `walletId`, `storedBalance`, `calculatedBalance`, `difference`, `consistent`, `checkedEntries`; inexistente → 404
+- [x] Os testes de T31 e T32 passam a asserir a reconciliação pelo endpoint
+- [x] Gate de build passa: `bun run test`; ≥ 4 testes
 
 **Tests**: integration
 **Gate**: full
@@ -951,6 +951,7 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 - [ ] Mensagem válida é processada pelo mesmo use case; a mesma mensagem 2× produz 1 transação e 1 lançamento e incrementa `inbox_duplicates_total`
 - [ ] Rejeição de negócio persiste `REJECTED` e faz ack; ack só ocorre depois do commit
 - [ ] Malformada, `kind = OPENING` e `messageId` com payload diferente vão à DLQ com ack e nada é gravado; `IDEMPOTENCY_KEY_REUSED` e `EXTERNAL_ID_CONFLICT` também
+- [ ] `messageId` acima de 255 caracteres é malformada: DLQ + ack, com teste
 - [ ] Gate completo; ≥ 10 testes
 
 **Tests**: integration

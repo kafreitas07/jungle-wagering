@@ -473,12 +473,12 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | MON-07 | P1: Money exato | Tasks (T4) | Done |
 | MON-08 | P1: Money exato | Tasks (T11) | Done |
 | MON-09 | P1: Money exato | Tasks (T4) | Done |
-| WAL-01 | P1: Wallet e abertura | Tasks (T20, T29) | Pending |
+| WAL-01 | P1: Wallet e abertura | Tasks (T20, T29) | Done |
 | WAL-02 | P1: Wallet e abertura | Tasks (T6, T20) | Done |
 | WAL-03 | P1: Wallet e abertura | Tasks (T6, T20) | Done |
-| WAL-04 | P1: Wallet e abertura | Tasks (T14, T20, T29) | Pending |
-| WAL-05 | P1: Wallet e abertura | Tasks (T24, T29) | Pending |
-| WAL-06 | P1: Wallet e abertura | Tasks (T24, T29) | Pending |
+| WAL-04 | P1: Wallet e abertura | Tasks (T14, T20, T29) | Done |
+| WAL-05 | P1: Wallet e abertura | Tasks (T24, T29) | Done |
+| WAL-06 | P1: Wallet e abertura | Tasks (T24, T29) | Done |
 | WAL-07 | P1: Wallet e abertura | Tasks (T6, T21) | Done |
 | WAL-08 | P1: Wallet e abertura | Tasks (T6, T14) | Done |
 | WAL-09 | P1: Wallet e abertura | Tasks (T6, T14, T21) | Done |
@@ -486,16 +486,16 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | TXN-02 | P1: Submissão de transações | Tasks (T8, T21) | Done |
 | TXN-03 | P1: Submissão de transações | Tasks (T8, T21) | Done |
 | TXN-04 | P1: Submissão de transações | Tasks (T8, T21) | Done |
-| TXN-05 | P1: Submissão de transações | Tasks (T11, T30) | Pending |
-| TXN-06 | P1: Submissão de transações | Tasks (T11, T14, T30) | Pending |
+| TXN-05 | P1: Submissão de transações | Tasks (T11, T30) | Done |
+| TXN-06 | P1: Submissão de transações | Tasks (T11, T14, T30) | Done |
 | TXN-07 | P1: Submissão de transações | Tasks (T21) | Done |
 | TXN-08 | P1: Submissão de transações | Tasks (T14, T21) | Done |
 | TXN-09 | P1: Submissão de transações | Tasks (T14, T21) | Done |
-| TXN-10 | P1: Submissão de transações | Tasks (T24, T30) | Pending |
+| TXN-10 | P1: Submissão de transações | Tasks (T24, T30) | Done |
 | TXN-11 | P1: Submissão de transações | Tasks (T7, T14) | Done |
 | TXN-12 | P1: Submissão de transações | Tasks (T7) | Done |
-| TXN-13 | P1: Submissão de transações | Tasks (T11, T30) | Pending |
-| TXN-14 | P1: Submissão de transações | Tasks (T11, T30) | Pending |
+| TXN-13 | P1: Submissão de transações | Tasks (T11, T30) | Done |
+| TXN-14 | P1: Submissão de transações | Tasks (T11, T30) | Done |
 | REV-01 | P1: Reversões e referências | Tasks (T21) | Done |
 | REV-02 | P1: Reversões e referências | Tasks (T8, T21) | Done |
 | REV-03 | P1: Reversões e referências | Tasks (T8, T21) | Done |
@@ -503,7 +503,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | REV-05 | P1: Reversões e referências | Tasks (T8, T21) | Done |
 | REV-06 | P1: Reversões e referências | Tasks (T8, T21) | Done |
 | REV-07 | P1: Reversões e referências | Tasks (T8, T21) | Done |
-| REV-08 | P1: Reversões e referências | Tasks (T8, T14, T21, T31) | Pending |
+| REV-08 | P1: Reversões e referências | Tasks (T8, T14, T21, T31) | Done |
 | REV-09 | P1: Reversões e referências | Tasks (T8, T21) | Done |
 | REV-10 | P1: Reversões e referências | Tasks (T8, T21) | Done |
 | PREF-01 | P1: Referências fora de ordem | Tasks (T8, T21) | Done |
@@ -512,18 +512,18 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | PREF-04 | P1: Referências fora de ordem | Tasks (T39) | Pending |
 | PREF-05 | P1: Referências fora de ordem | Tasks (T39) | Pending |
 | PREF-06 | P1: Referências fora de ordem | Tasks (T39) | Pending |
-| IDEM-01 | P1: Idempotência persistente | Tasks (T30) | Pending |
+| IDEM-01 | P1: Idempotência persistente | Tasks (T30) | Done |
 | IDEM-02 | P1: Idempotência persistente | Tasks (T14, T22) | Done |
-| IDEM-03 | P1: Idempotência persistente | Tasks (T22, T30) | Pending |
-| IDEM-04 | P1: Idempotência persistente | Tasks (T22, T30) | Pending |
-| IDEM-05 | P1: Idempotência persistente | Tasks (T22, T30) | Pending |
-| IDEM-06 | P1: Idempotência persistente | Tasks (T31) | Pending |
+| IDEM-03 | P1: Idempotência persistente | Tasks (T22, T30) | Done |
+| IDEM-04 | P1: Idempotência persistente | Tasks (T22, T30) | Done |
+| IDEM-05 | P1: Idempotência persistente | Tasks (T22, T30) | Done |
+| IDEM-06 | P1: Idempotência persistente | Tasks (T31) | Done |
 | IDEM-07 | P1: Idempotência persistente | Tasks (T10) | Done |
 | IDEM-08 | P1: Idempotência persistente | Tasks (T42) | Pending |
-| CONC-01 | P1: Concorrência | Tasks (T31) | Pending |
-| CONC-02 | P1: Concorrência | Tasks (T18, T21, T31) | Pending |
-| CONC-03 | P1: Concorrência | Tasks (T21, T31) | Pending |
-| CONC-04 | P1: Concorrência | Tasks (T32) | Pending |
+| CONC-01 | P1: Concorrência | Tasks (T31) | Done |
+| CONC-02 | P1: Concorrência | Tasks (T18, T21, T31) | Done |
+| CONC-03 | P1: Concorrência | Tasks (T21, T31) | Done |
+| CONC-04 | P1: Concorrência | Tasks (T32) | Done |
 | CONC-05 | P1: Concorrência | Tasks (T23) | Done |
 | CONC-06 | P1: Concorrência | Tasks (T18, T21) | Done |
 | CONC-07 | P1: Concorrência | Tasks (T23) | Done |
@@ -532,8 +532,8 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | LEDG-02 | P1: Ledger imutável | Tasks (T5, T15) | Done |
 | LEDG-03 | P1: Ledger imutável | Tasks (T15) | Done |
 | LEDG-04 | P1: Ledger imutável | Tasks (T15) | Done |
-| LEDG-05 | P1: Ledger imutável | Tasks (T25, T29) | Pending |
-| LEDG-06 | P1: Ledger imutável | Tasks (T11, T25, T29) | Pending |
+| LEDG-05 | P1: Ledger imutável | Tasks (T25, T29) | Done |
+| LEDG-06 | P1: Ledger imutável | Tasks (T11, T25, T29) | Done |
 | LEDG-07 | P1: Ledger imutável | Tasks (T5) | Done |
 | SQS-01 | P1: Consumo SQS com inbox | Tasks (T37) | Pending |
 | SQS-02 | P1: Consumo SQS com inbox | Tasks (T19, T37) | Pending |
@@ -560,22 +560,22 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | OUT-10 | P1: Transactional outbox | Tasks (T36) | Pending |
 | OUT-11 | P1: Transactional outbox | Tasks (T36) | Pending |
 | OUT-12 | P1: Transactional outbox | Tasks (T36) | Pending |
-| REC-01 | P1: Reconciliação | Tasks (T33) | Pending |
-| REC-02 | P1: Reconciliação | Tasks (T33) | Pending |
-| REC-03 | P1: Reconciliação | Tasks (T33) | Pending |
-| REC-04 | P1: Reconciliação | Tasks (T34) | Pending |
-| API-01 | P1: Contrato de erros HTTP | Tasks (T27) | Pending |
-| API-02 | P1: Contrato de erros HTTP | Tasks (T27) | Pending |
-| API-03 | P1: Contrato de erros HTTP | Tasks (T27) | Pending |
+| REC-01 | P1: Reconciliação | Tasks (T33) | Done |
+| REC-02 | P1: Reconciliação | Tasks (T33) | Done |
+| REC-03 | P1: Reconciliação | Tasks (T33) | Done |
+| REC-04 | P1: Reconciliação | Tasks (T34) | Done |
+| API-01 | P1: Contrato de erros HTTP | Tasks (T27) | Done |
+| API-02 | P1: Contrato de erros HTTP | Tasks (T27) | Done |
+| API-03 | P1: Contrato de erros HTTP | Tasks (T27) | Done |
 | OBS-01 | P1: Observabilidade e health | Tasks (T41) | Pending |
 | OBS-02 | P1: Observabilidade e health | Tasks (T41) | Pending |
 | OBS-03 | P1: Observabilidade e health | Tasks (T41) | Pending |
 | OBS-04 | P1: Observabilidade e health | Tasks (T42) | Pending |
-| OBS-05 | P1: Observabilidade e health | Tasks (T26) | Pending |
-| OBS-06 | P1: Observabilidade e health | Tasks (T26) | Pending |
+| OBS-05 | P1: Observabilidade e health | Tasks (T26) | Done |
+| OBS-06 | P1: Observabilidade e health | Tasks (T26) | Done |
 | OBS-07 | P1: Observabilidade e health | Tasks (T26, T42) | Pending |
-| AUTH-01 | P1: Extensão de autenticação | Tasks (T28, T29) | Pending |
-| AUTH-02 | P1: Extensão de autenticação | Tasks (T28, T30) | Pending |
+| AUTH-01 | P1: Extensão de autenticação | Tasks (T28, T29) | Done |
+| AUTH-02 | P1: Extensão de autenticação | Tasks (T28, T30) | Done |
 | AUTH-03 | P1: Extensão de autenticação | Tasks (T46) | Pending |
 | DB-01 | P1: Schema e migrations | Tasks (T13, T15) | Done |
 | DB-02 | P1: Schema e migrations | Tasks (T14, T15) | Done |
@@ -584,7 +584,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | TEST-01 | P1: Testes obrigatórios | Tasks (T4, T6, T8, T10) | Done |
 | TEST-02 | P1: Testes obrigatórios | Tasks (T36, T40) | Pending |
 | TEST-03 | P1: Testes obrigatórios | Tasks (T31, T32, T40) | Pending |
-| TEST-04 | P1: Testes obrigatórios | Tasks (T15, T34) | Pending |
+| TEST-04 | P1: Testes obrigatórios | Tasks (T15, T34) | Done |
 | TEST-05 | P1: Testes obrigatórios | Tasks (T1, T2, T13) | Done |
 | DOC-01 | P2: Ambiente e documentação | Tasks (T2, T35, T43) | Pending |
 | DOC-02 | P2: Ambiente e documentação | Tasks (T43) | Pending |

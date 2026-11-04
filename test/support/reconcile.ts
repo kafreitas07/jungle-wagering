@@ -1,4 +1,6 @@
 import type { MikroORM } from '@mikro-orm/postgresql';
+import { api, startTestApp, type TestApp } from './app';
+import { onTestOrmClose } from './db';
 import { sql } from './sql';
 
 /**
@@ -39,4 +41,37 @@ export async function assertReconciled(orm: MikroORM, walletIds: readonly string
       );
     }
   }
+}
+
+/**
+ * The final assertion through the public endpoint (REC-04), followed by the independent SQL check. If the endpoint
+ * and the database ever disagreed about "consistent", one of the two would fail here.
+ */
+export async function assertReconciledByApi(orm: MikroORM, url: string, walletIds: readonly string[]): Promise<void> {
+  for (const walletId of walletIds) {
+    const response = await api(url, 'POST', `/wallets/${walletId}/reconciliation`);
+    if (response.status !== 200 || response.body.consistent !== true || response.body.difference.amount !== '0.00') {
+      throw new Error(`Reconciliation endpoint reported a problem for ${walletId}: ${response.status} ${JSON.stringify(response.body)}`);
+    }
+  }
+  await assertReconciled(orm, walletIds);
+}
+
+let reconciliationApp: Promise<TestApp> | undefined;
+
+/**
+ * For tests that call use cases directly and have no HTTP server of their own: the final assertion still goes
+ * through the public endpoint, on an app started on first use and closed with the shared ORM.
+ */
+export async function assertReconciledViaApp(orm: MikroORM, walletIds: readonly string[]): Promise<void> {
+  if (reconciliationApp === undefined) {
+    reconciliationApp = startTestApp();
+    onTestOrmClose(async () => {
+      const app = await reconciliationApp;
+      reconciliationApp = undefined;
+      await app?.close();
+    });
+  }
+  const app = await reconciliationApp;
+  await assertReconciledByApi(orm, app.url, walletIds);
 }

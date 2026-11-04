@@ -4,10 +4,12 @@ import type {
   InboxRepository,
   LedgerRepository,
   OutboxRepository,
+  ReconciliationSnapshot,
   TransactionRepository,
   TxRepositories,
 } from '../../application/ports';
 import type { WalletLedgerEntry } from '../../domain/ledger/wallet-ledger-entry';
+import { Money } from '../../domain/money/money';
 import type { InboxMessage } from '../../domain/messaging/inbox-message';
 import type { OutboxMessage } from '../../domain/messaging/outbox-message';
 import type { WagerTransaction } from '../../domain/wager/wager-transaction';
@@ -75,6 +77,29 @@ class LedgerRepositoryImpl implements LedgerRepository {
       { orderBy: { walletVersion: 'desc' }, limit: options.limit },
     );
     return records.map(ledgerEntryToDomain);
+  }
+
+  async reconciliationSnapshot(walletId: string): Promise<ReconciliationSnapshot | null> {
+    const rows = (await this.em.getConnection().execute(
+      `select w.balance::text as stored,
+              w.currency as currency,
+              coalesce(sum(case l.direction when 'CREDIT' then l.amount else -l.amount end), 0)::text as calculated,
+              count(l.id)::int as entries
+         from wallets w
+         left join wallet_ledger_entries l on l.wallet_id = w.id
+        where w.id = ?
+        group by w.id, w.balance, w.currency`,
+      [walletId],
+    )) as { stored: string; currency: string; calculated: string; entries: number }[];
+    const row = rows[0];
+    if (row === undefined) {
+      return null;
+    }
+    return {
+      storedBalance: Money.from({ amount: row.stored, currency: row.currency }),
+      calculatedBalance: Money.from({ amount: row.calculated, currency: row.currency }),
+      checkedEntries: row.entries,
+    };
   }
 }
 

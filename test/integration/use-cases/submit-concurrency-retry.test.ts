@@ -11,7 +11,7 @@ import { SubmitWagerTransaction, type SubmitWagerTransactionCommand } from '../.
 import type { Wallet } from '../../../src/domain/wallet/wallet';
 import { closeTestOrm, getTestOrm } from '../../support/db';
 import { FakeClock, RecordingMetrics, holdWalletLock, testUnitOfWork } from '../../support/context';
-import { assertReconciled } from '../../support/reconcile';
+import { assertReconciledViaApp } from '../../support/reconcile';
 import { sql, uuid } from '../../support/sql';
 
 let orm: MikroORM;
@@ -69,7 +69,7 @@ describe('lock contention (CONC-05)', () => {
     expect(transaction.status).toBe('PROCESSED');
     expect(metrics.total('lock_conflicts_total')).toBeGreaterThanOrEqual(1);
     expect((await sql(orm, 'select balance::text as b from wallets where id = ?', [wallet.id]))[0]?.b).toBe('975.00');
-    await assertReconciled(orm, [wallet.id]);
+    await assertReconciledViaApp(orm, [wallet.id]);
   });
 
   test('a lock held longer than all retries ends in ConcurrencyConflict, without partial effects', async () => {
@@ -86,7 +86,7 @@ describe('lock contention (CONC-05)', () => {
     expect(metrics.total('lock_conflicts_total')).toBe(3);
     expect(await sql(orm, 'select 1 from wager_transactions where external_transaction_id = ?', [external])).toHaveLength(0);
     expect((await sql(orm, 'select balance::text as b, version from wallets where id = ?', [wallet.id]))[0]).toEqual({ b: '1000.00', version: 1 });
-    await assertReconciled(orm, [wallet.id]);
+    await assertReconciledViaApp(orm, [wallet.id]);
   });
 
   test('after giving up, the same request can be sent again and succeeds', async () => {
@@ -101,7 +101,7 @@ describe('lock contention (CONC-05)', () => {
 
     expect(retried.transaction.status).toBe('PROCESSED');
     expect(retried.replay).toBe(false);
-    await assertReconciled(orm, [wallet.id]);
+    await assertReconciledViaApp(orm, [wallet.id]);
   });
 });
 
@@ -123,7 +123,7 @@ describe('races decided by unique constraints (CONC-07)', () => {
     expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
     expect(rejected).toHaveLength(1);
     expect(rejected[0]!.reason).toBeInstanceOf(IdempotencyConflictError);
-    await assertReconciled(orm, [first.id, second.id]);
+    await assertReconciledViaApp(orm, [first.id, second.id]);
   });
 
   test('one external id under two keys at once: one wins, the other becomes an external id conflict', async () => {
@@ -139,7 +139,7 @@ describe('races decided by unique constraints (CONC-07)', () => {
     const rejected = results.filter((r) => r.status === 'rejected') as PromiseRejectedResult[];
     expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
     expect(rejected[0]!.reason).toBeInstanceOf(ExternalIdConflictError);
-    await assertReconciled(orm, [first.id, second.id]);
+    await assertReconciledViaApp(orm, [first.id, second.id]);
   });
 
   test('business errors are never retried: an idempotency conflict surfaces on the first attempt', async () => {

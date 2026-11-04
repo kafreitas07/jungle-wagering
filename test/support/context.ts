@@ -1,5 +1,5 @@
 import type { MikroORM } from '@mikro-orm/postgresql';
-import type { Clock, Labels, MetricsPort } from '../../src/application/ports';
+import type { Clock, Labels, LogContext, LoggerPort, MetricsPort } from '../../src/application/ports';
 import { MikroOrmUnitOfWork } from '../../src/infrastructure/persistence/unit-of-work';
 import { sql } from './sql';
 
@@ -54,4 +54,25 @@ export function holdWalletLock(orm: MikroORM, walletId: string, ms: number): { a
     await new Promise((resolve) => setTimeout(resolve, ms));
   });
   return { acquired, released };
+}
+
+export class RecordingLogger implements LoggerPort {
+  readonly entries: { level: 'debug' | 'info' | 'warn' | 'error'; message: string; context: LogContext | undefined }[] = [];
+
+  debug(message: string, context?: LogContext): void {
+    this.entries.push({ level: 'debug', message, context });
+  }
+  info(message: string, context?: LogContext): void {
+    this.entries.push({ level: 'info', message, context });
+  }
+  warn(message: string, context?: LogContext): void {
+    this.entries.push({ level: 'warn', message, context });
+  }
+  error(message: string, context?: LogContext): void {
+    this.entries.push({ level: 'error', message, context });
+  }
+
+  at(level: 'debug' | 'info' | 'warn' | 'error') {
+    return this.entries.filter((entry) => entry.level === level);
+  }
 }
