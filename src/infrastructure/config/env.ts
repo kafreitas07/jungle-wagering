@@ -8,7 +8,10 @@ const boolean = (fallback: boolean) =>
 
 const positiveInt = (fallback: number) => z.coerce.number().int().positive().default(fallback);
 
-const envSchema = z.object({
+const envSchema = z
+  .object({
+  NODE_ENV: z.string().optional(),
+  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   APP_PORT: positiveInt(3100),
   DATABASE_URL: z.string().min(1),
 
@@ -46,10 +49,21 @@ const envSchema = z.object({
 
   // Test-only crash point. Never set outside tests.
   FAULT_INJECTION: z.enum(['crash-after-commit-before-ack']).optional(),
-});
+  })
+  .superRefine((env, ctx) => {
+    // The crash point kills the process on purpose. A deployment that sets it by mistake must not start.
+    if (env.FAULT_INJECTION !== undefined && env.NODE_ENV !== 'test') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['FAULT_INJECTION'],
+        message: `is a test-only crash point and requires NODE_ENV=test (NODE_ENV is "${env.NODE_ENV ?? 'unset'}"); refusing to start`,
+      });
+    }
+  });
 
 export interface AppConfig {
   readonly port: number;
+  readonly logLevel: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' | 'silent';
   readonly database: {
     readonly url: string;
     readonly poolMax: number;
@@ -151,5 +165,6 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
       batchSize: env.PENDING_WORKER_BATCH_SIZE,
     },
     faultInjection: env.FAULT_INJECTION,
+    logLevel: env.LOG_LEVEL,
   };
 }

@@ -54,6 +54,7 @@ export class ConcurrencyRetry {
           throw new ConcurrencyConflictError(attempt + 1, error);
         }
         this.deps.metrics.increment('lock_conflicts_total');
+        this.deps.metrics.increment('retries_total', { reason: 'concurrency_conflict' });
         await this.sleep(Math.round(base * (0.75 + 0.5 * this.random())));
       }
     }

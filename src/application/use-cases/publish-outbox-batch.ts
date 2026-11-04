@@ -1,11 +1,12 @@
 import type { OutboxMessage } from '../../domain/messaging/outbox-message';
-import { type Clock, type EventPublisherPort, type LoggerPort, NoopLogger, type UnitOfWork } from '../ports';
+import { type Clock, type EventPublisherPort, type LoggerPort, type MetricsPort, NoopLogger, NoopMetrics, type UnitOfWork } from '../ports';
 
 export interface PublishOutboxBatchDependencies {
   readonly unitOfWork: UnitOfWork;
   readonly publisher: EventPublisherPort;
   readonly clock: Clock;
   readonly logger?: LoggerPort;
+  readonly metrics?: MetricsPort;
   readonly batchSize?: number;
   /** How long a claim hides the rows from other publishers. A crashed publisher's rows come back after this. */
   readonly leaseMs?: number;
@@ -30,11 +31,13 @@ export const DEFAULT_OUTBOX_LEASE_MS = 30_000;
  */
 export class PublishOutboxBatch {
   private readonly logger: LoggerPort;
+  private readonly metrics: MetricsPort;
   private readonly batchSize: number;
   private readonly leaseMs: number;
 
   constructor(private readonly deps: PublishOutboxBatchDependencies) {
     this.logger = deps.logger ?? new NoopLogger();
+    this.metrics = deps.metrics ?? new NoopMetrics();
     this.batchSize = deps.batchSize ?? DEFAULT_OUTBOX_BATCH_SIZE;
     this.leaseMs = deps.leaseMs ?? DEFAULT_OUTBOX_LEASE_MS;
   }
@@ -78,6 +81,9 @@ export class PublishOutboxBatch {
       }
     });
 
+    for (let failed = 0; failed < failures.size; failed += 1) {
+      this.metrics.increment('retries_total', { reason: 'outbox_publish' });
+    }
     if (failures.size > 0) {
       this.logger.warn('outbox publication failed', { failed: failures.size, claimed: claimed.length, ...firstFailure(claimed, failures) });
     }

@@ -1,3 +1,4 @@
+import type { MetricsPort } from '../../src/application/ports';
 import type { MikroORM } from '@mikro-orm/postgresql';
 import { OpenWallet } from '../../src/application/use-cases/open-wallet';
 import { SubmitWagerTransaction } from '../../src/application/use-cases/submit-wager-transaction';
@@ -20,8 +21,8 @@ export async function newWallet(orm: MikroORM, balance = '1000.00', clock = new 
   return { id: wallet.id, playerId: wallet.playerId };
 }
 
-export function submitUseCase(orm: MikroORM, clock = new FakeClock()): SubmitWagerTransaction {
-  return new SubmitWagerTransaction({ unitOfWork: testUnitOfWork(orm), clock, referencePolicy: policy });
+export function submitUseCase(orm: MikroORM, clock = new FakeClock(), metrics?: MetricsPort): SubmitWagerTransaction {
+  return new SubmitWagerTransaction({ unitOfWork: testUnitOfWork(orm), clock, referencePolicy: policy, ...(metrics === undefined ? {} : { metrics }) });
 }
 
 /** A `WagerTransactionRequested` message with fresh ids; `data` and the envelope can be overridden. */

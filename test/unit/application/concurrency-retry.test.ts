@@ -53,7 +53,7 @@ describe('ConcurrencyRetry (CONC-05, CONC-07)', () => {
     expect(await retry.run(operation)).toBe('ok');
     expect(calls()).toBe(2);
     expect(sleeps).toHaveLength(1);
-    expect(metrics.counts).toEqual(['lock_conflicts_total']);
+    expect(metrics.counts).toEqual(['lock_conflicts_total', 'retries_total']);
   });
 
   test.each([
@@ -97,7 +97,7 @@ describe('ConcurrencyRetry (CONC-05, CONC-07)', () => {
     expect((failure as ConcurrencyConflictError).cause).toBe(last);
     expect(calls()).toBe(4);
     expect(sleeps).toHaveLength(3);
-    expect(metrics.counts).toEqual(['lock_conflicts_total', 'lock_conflicts_total', 'lock_conflicts_total']);
+    expect(metrics.counts).toEqual(['lock_conflicts_total', 'retries_total', 'lock_conflicts_total', 'retries_total', 'lock_conflicts_total', 'retries_total']);
   });
 
   test('waits 20, 60 and 180 ms at the middle of the jitter range', async () => {
@@ -128,6 +128,6 @@ describe('ConcurrencyRetry (CONC-05, CONC-07)', () => {
 
     await expect(retry.run(operation)).rejects.toBe(fatal);
     expect(calls()).toBe(2);
-    expect(metrics.counts).toEqual(['lock_conflicts_total']);
+    expect(metrics.counts).toEqual(['lock_conflicts_total', 'retries_total']);
   });
 });

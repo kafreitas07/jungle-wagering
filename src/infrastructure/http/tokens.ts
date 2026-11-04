@@ -8,3 +8,4 @@ export const METRICS = Symbol('METRICS');
 export const PROVIDER_IDENTITY = Symbol('PROVIDER_IDENTITY');
 export const DEPENDENCY_PROBES = Symbol('DEPENDENCY_PROBES');
 export const LOGGER = Symbol('LOGGER');
+export const METRICS_REGISTRY = Symbol('METRICS_REGISTRY');

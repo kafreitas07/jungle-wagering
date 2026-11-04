@@ -99,6 +99,7 @@ describe('messaging settings', () => {
       SQS_SHUTDOWN_GRACE_MS: '1000',
       PENDING_WORKER_INTERVAL_MS: '100',
       PENDING_WORKER_BATCH_SIZE: '5',
+      NODE_ENV: 'test',
       FAULT_INJECTION: 'crash-after-commit-before-ack',
     });
 
@@ -120,5 +121,34 @@ describe('messaging settings', () => {
 
   test('a long poll of 0 seconds (short polling) is allowed', () => {
     expect(loadEnv({ ...base, SQS_POLL_WAIT_SECONDS: '0' }).sqs.consumer.pollWaitSeconds).toBe(0);
+  });
+});
+
+describe('FAULT_INJECTION is allowed only under NODE_ENV=test', () => {
+  const crash = 'crash-after-commit-before-ack';
+
+  test('refuses to start when it is set and NODE_ENV is production, naming both variables', () => {
+    expect(() => loadEnv({ ...base, NODE_ENV: 'production', FAULT_INJECTION: crash })).toThrow(/FAULT_INJECTION[\s\S]*NODE_ENV=test[\s\S]*production/);
+  });
+
+  test('refuses to start when it is set and NODE_ENV is absent', () => {
+    expect(() => loadEnv({ ...base, FAULT_INJECTION: crash })).toThrow(/FAULT_INJECTION[\s\S]*unset/);
+  });
+
+  test('refuses development too: only "test" opens the crash point', () => {
+    expect(() => loadEnv({ ...base, NODE_ENV: 'development', FAULT_INJECTION: crash })).toThrow(ConfigError);
+  });
+
+  test('is accepted under NODE_ENV=test', () => {
+    expect(loadEnv({ ...base, NODE_ENV: 'test', FAULT_INJECTION: crash }).faultInjection).toBe(crash);
+  });
+
+  test('absent, it never matters what NODE_ENV is', () => {
+    expect(loadEnv({ ...base, NODE_ENV: 'production' }).faultInjection).toBeUndefined();
+    expect(loadEnv(base).faultInjection).toBeUndefined();
+  });
+
+  test('an invalid value is still reported as invalid', () => {
+    expect(() => loadEnv({ ...base, NODE_ENV: 'test', FAULT_INJECTION: 'explode' })).toThrow(/FAULT_INJECTION/);
   });
 });

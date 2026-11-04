@@ -10,7 +10,7 @@ import type { EventContext } from '../../domain/messaging/integration-event';
 import { InboxMessage } from '../../domain/messaging/inbox-message';
 import { Money, type MoneyProps } from '../../domain/money/money';
 import { type ReferenceRetryPolicy, type WagerKind, WagerTransaction } from '../../domain/wager/wager-transaction';
-import { type Clock, NoopMetrics, type TxRepositories, type UnitOfWork } from '../ports';
+import { type Clock, type MetricsPort, NoopMetrics, type TxRepositories, type UnitOfWork } from '../ports';
 import { ConcurrencyRetry } from '../services/concurrency-retry';
 import { applyWagerDecision } from '../services/apply-wager-decision';
 import { payloadHash } from '../services/payload-hash';
@@ -52,19 +52,50 @@ export interface SubmitWagerTransactionDependencies {
   readonly referencePolicy: ReferenceRetryPolicy;
   /** Reruns the whole transaction on lock timeout, deadlock or lost races. Defaults to the standard policy. */
   readonly concurrencyRetry?: ConcurrencyRetry;
+  /** Counts committed outcomes, replays and idempotency conflicts, and times each call. Defaults to no-op. */
+  readonly metrics?: MetricsPort;
 }
 
 /** The one place where an operation becomes a balance change. Same path for HTTP, SQS and the pending worker. */
 export class SubmitWagerTransaction {
   private readonly retry: ConcurrencyRetry;
+  private readonly metrics: MetricsPort;
 
   constructor(private readonly deps: SubmitWagerTransactionDependencies) {
-    this.retry = deps.concurrencyRetry ?? new ConcurrencyRetry({ metrics: new NoopMetrics() });
+    this.metrics = deps.metrics ?? new NoopMetrics();
+    this.retry = deps.concurrencyRetry ?? new ConcurrencyRetry({ metrics: this.metrics });
   }
 
   execute(command: SubmitWagerTransactionCommand): Promise<SubmitResult> {
     const money = Money.from(command.money);
-    return this.retry.run(() => this.deps.unitOfWork.run((tx) => this.process(tx, command, money)));
+    return this.track('http', () => this.retry.run(() => this.deps.unitOfWork.run((tx) => this.process(tx, command, money))));
+  }
+
+  /**
+   * Metrics are recorded after the commit, from what the database now holds, so a rolled-back attempt counts nothing.
+   * Idempotency conflicts are counted here, once, whichever entry point they came through.
+   */
+  private async track<T extends object>(source: 'http' | 'sqs', work: () => Promise<T>): Promise<T> {
+    const started = performance.now();
+    try {
+      const result = await work();
+      const outcome = result as Partial<SubmitResult>;
+      if (outcome.transaction !== undefined) {
+        if (outcome.replay) {
+          this.metrics.increment('idempotent_replays_total');
+        } else {
+          this.metrics.increment('wager_transactions_total', { kind: outcome.transaction.kind, status: outcome.transaction.status });
+        }
+      }
+      return result;
+    } catch (error) {
+      if (error instanceof IdempotencyConflictError || error instanceof ExternalIdConflictError) {
+        this.metrics.increment('idempotency_conflicts_total');
+      }
+      throw error;
+    } finally {
+      this.metrics.observeProcessingDuration((performance.now() - started) / 1000, { source });
+    }
   }
 
   /**
@@ -75,7 +106,7 @@ export class SubmitWagerTransaction {
    */
   executeFromQueue(command: SubmitWagerTransactionCommand, inbox: QueueMessageIdentity): Promise<QueueSubmitResult> {
     const money = Money.from(command.money);
-    return this.retry.run(() =>
+    return this.track('sqs', () => this.retry.run(() =>
       this.deps.unitOfWork.run(async (tx): Promise<QueueSubmitResult> => {
         const at = this.deps.clock.now();
         const message = InboxMessage.receive({ ...inbox, at });
@@ -89,7 +120,7 @@ export class SubmitWagerTransaction {
         }
         return { duplicate: false, ...(await this.process(tx, command, money)) };
       }),
-    );
+    ));
   }
 
   private async process(tx: TxRepositories, command: SubmitWagerTransactionCommand, money: Money): Promise<SubmitResult> {

@@ -2,7 +2,8 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } fr
 import type { MikroORM } from '@mikro-orm/postgresql';
 import { startApplication, type RunningApplication } from '../../../src/infrastructure/bootstrap';
 import { api, testConfig } from '../../support/app';
-import { closeTestOrm, getTestOrm } from '../../support/db';
+import { closeTestOrm, getTestOrm, testDatabaseConfig } from '../../support/db';
+import { freePort } from '../../support/process';
 import { createWallet } from '../../support/http';
 import { drainOutbox, parkPendingTransactions, pendingOutbox } from '../../support/messaging';
 import { createTestQueues, type TestQueues } from '../../support/queues';
@@ -133,3 +134,53 @@ async function newWalletViaApp() {
   const { newWallet } = await import('../../support/wager-messages');
   return newWallet(orm, '500.00');
 }
+
+describe('the runners report to the same /metrics as the HTTP side', () => {
+  test('a message handled twice and a poison message show up as inbox duplicate, processed transaction and DLQ reason', async () => {
+    running = await boot({ http: true, consumer: true });
+    const url = `http://127.0.0.1:${running.httpPort}`;
+    const wallet = await createWallet(url, '500.00');
+    const message = wagerMessage(wallet);
+    await sendMessage(queues.adapter, queues.wager, message, wallet.id);
+    await sendMessage(queues.adapter, queues.wager, message, wallet.id);
+    await queues.adapter.send(queues.wager, { body: 'not json {', groupId: wallet.id, deduplicationId: `poison-${message.messageId}` });
+
+    const scrape = async () => (await fetch(`${url}/metrics`)).text();
+    expect(await waitFor(async () => (await scrape()).includes('inbox_duplicates_total 1'))).toBe(true);
+    expect(await waitFor(async () => (await scrape()).includes('dlq_messages_total{reason="malformed_json"} 1'))).toBe(true);
+    const text = await scrape();
+    expect(text).toContain('wager_transactions_total{kind="BET",status="PROCESSED"} 1');
+    expect(text).toMatch(/processing_duration_seconds_count\{source="sqs"\} [1-9]/);
+  });
+});
+
+describe('the fault injection guard, on a real process', () => {
+  async function run(nodeEnv: string | undefined) {
+    const env: Record<string, string | undefined> = {
+      ...process.env,
+      DATABASE_URL: testDatabaseConfig().url,
+      SQS_ENDPOINT: 'http://localhost:4566',
+      AWS_ACCESS_KEY_ID: 'test',
+      AWS_SECRET_ACCESS_KEY: 'test',
+      FAULT_INJECTION: 'crash-after-commit-before-ack',
+      NODE_ENV: nodeEnv,
+      APP_PORT: String(freePort()),
+    };
+    if (nodeEnv === undefined) {
+      delete env.NODE_ENV;
+    }
+    const child = Bun.spawn(['bun', 'run', 'src/main.ts'], { env: env as Record<string, string>, stdout: 'pipe', stderr: 'pipe' });
+    const timer = setTimeout(() => child.kill('SIGKILL'), 15_000);
+    const [errors, code] = await Promise.all([new Response(child.stderr).text(), child.exited]);
+    clearTimeout(timer);
+    return { errors, code };
+  }
+
+  test.each(['production', undefined])('NODE_ENV=%s: exits with an error that names the variable, and never serves', async (nodeEnv) => {
+    const { errors, code } = await run(nodeEnv);
+
+    expect(code).toBe(1);
+    expect(errors).toContain('FAULT_INJECTION');
+    expect(errors).toContain('NODE_ENV=test');
+  });
+});

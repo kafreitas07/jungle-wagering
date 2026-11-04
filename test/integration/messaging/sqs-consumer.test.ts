@@ -48,7 +48,7 @@ afterEach(async () => {
 
 function startConsumer(adapter: SqsAdapter = queues.adapter, overrides: { maxReceiveCount?: number } = {}): SqsConsumer {
   consumer = new SqsConsumer(
-    { adapter, submit: submitUseCase(orm), metrics, logger },
+    { adapter, submit: submitUseCase(orm, undefined, metrics), metrics, logger },
     { queue: queues.wager, dlq: queues.dlq, pollWaitSeconds: 1, maxReceiveCount: overrides.maxReceiveCount ?? 5, shutdownGraceMs: 5000 },
   );
   consumer.start();
@@ -382,6 +382,8 @@ describe('messages that cannot be applied but are not worth a retry', () => {
 
     expect(await transactionsOf(orm, message.data.externalTransactionId)).toHaveLength(0);
     expect(logger.at('warn')[0]?.context).toMatchObject({ code: 'WALLET_NOT_FOUND', messageId: message.messageId });
+    expect(metrics.counts).toContainEqual({ metric: 'wager_rejected_unpersisted_total', labels: { code: 'WALLET_NOT_FOUND' } });
+    expect(metrics.total('wager_transactions_total')).toBe(0);
     expect(await queueEmpty()).toBe(true);
     expect(await queues.depth(queues.dlq)).toBe(0);
   });
@@ -398,6 +400,10 @@ describe('messages that cannot be applied but are not worth a retry', () => {
     await consumer!.stop();
 
     expect(logger.at('warn').map((entry) => entry.context?.code).sort()).toEqual(['CURRENCY_MISMATCH', 'WALLET_PLAYER_MISMATCH']);
+    expect(metrics.counts.filter((entry) => entry.metric === 'wager_rejected_unpersisted_total').map((entry) => entry.labels?.code).sort()).toEqual([
+      'CURRENCY_MISMATCH',
+      'WALLET_PLAYER_MISMATCH',
+    ]);
     expect(await transactionsOf(orm, otherPlayer.data.externalTransactionId)).toHaveLength(0);
     expect(await transactionsOf(orm, otherCurrency.data.externalTransactionId)).toHaveLength(0);
     await assertReconciledViaApp(orm, [wallet.id]);

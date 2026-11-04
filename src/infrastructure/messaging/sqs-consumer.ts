@@ -12,6 +12,7 @@ import { canonicalJson } from '../../application/services/payload-hash';
 import type { SubmitWagerTransaction, SubmitWagerTransactionCommand } from '../../application/use-cases/submit-wager-transaction';
 import { DomainError } from '../../domain/errors/domain-errors';
 import { type WagerTransactionRequestedMessage, wagerTransactionRequestedSchema } from '../contracts/wager.contract';
+import { runWithLogScope } from '../observability/log-context';
 import { InFlight, isFinalReceive, visibilityBackoffSeconds } from './sqs-consumer-resilience';
 import type { ReceivedMessage, SqsAdapter } from './sqs.adapter';
 
@@ -171,8 +172,13 @@ export class SqsConsumer {
 
     const { messageId, data } = parsed.data;
     const logIds = { messageId, sqsMessageId: message.sqsMessageId, receiveCount: message.receiveCount };
+    return runWithLogScope({ correlationId: messageId, messageId }, () => this.apply(parsed.data, logIds));
+  }
+
+  private async apply(message: WagerTransactionRequestedMessage, logIds: Record<string, unknown>): Promise<Disposition> {
+    const { messageId, data } = message;
     try {
-      const result = await this.deps.submit.executeFromQueue(toCommand(parsed.data), {
+      const result = await this.deps.submit.executeFromQueue(toCommand(message), {
         consumerName: WAGER_CONSUMER_NAME,
         messageId,
         payloadHash: messageHash(data),
@@ -188,7 +194,7 @@ export class SqsConsumer {
       }
       return { action: 'ack' };
     } catch (error) {
-      return this.classify(error, parsed.data, logIds);
+      return this.classify(error, message, logIds);
     }
   }
 
@@ -199,13 +205,12 @@ export class SqsConsumer {
       return { action: 'dead-letter', reason: 'inbox_payload_conflict' };
     }
     if (error instanceof IdempotencyConflictError || error instanceof ExternalIdConflictError) {
-      this.metrics.increment('idempotency_conflicts_total');
       this.logger.error('idempotency conflict', { ...logIds, code: error.code });
       return { action: 'dead-letter', reason: error.code.toLowerCase() };
     }
     if (error instanceof WalletNotFoundError || error instanceof WalletPlayerMismatchError || error instanceof WalletCurrencyMismatchError) {
       // Nothing was stored and a resend would fail the same way: acknowledge, but leave a trace.
-      this.metrics.increment('wager_transactions_total', { kind: message.data.kind, status: error.code });
+      this.metrics.increment('wager_rejected_unpersisted_total', { code: error.code });
       this.logger.warn('message refused before processing', { ...logIds, code: error.code });
       return { action: 'ack' };
     }
