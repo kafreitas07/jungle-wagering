@@ -3,18 +3,20 @@ import { isZeroAmount, moneyInputSchema } from './money.contract';
 
 const WAGER_KINDS = ['BET', 'WIN', 'LOSS', 'REFUND', 'ROLLBACK'] as const;
 const text = z.string().min(1);
+/** Identifiers end up in unique indexes: unbounded values would fail in the database and surface as a 500. */
+const identifier = text.max(255);
 
 /** OPENING is not in this list: it is internal and never accepted from a provider or a queue. */
 const payloadFields = {
-  providerId: text.refine((value) => value !== 'internal', '"internal" is a reserved provider id'),
-  externalTransactionId: text,
+  providerId: identifier.refine((value) => value !== 'internal', '"internal" is a reserved provider id'),
+  externalTransactionId: identifier,
   playerId: z.uuid(),
   walletId: z.uuid(),
-  roundId: text,
-  gameId: text,
+  roundId: identifier,
+  gameId: identifier,
   kind: z.enum(WAGER_KINDS),
   money: moneyInputSchema,
-  referenceExternalTransactionId: text.optional(),
+  referenceExternalTransactionId: identifier.optional(),
 };
 
 interface BusinessFields {
@@ -51,7 +53,7 @@ export const wagerTransactionRequestedSchema = z.object({
   messageId: text,
   type: z.literal('WagerTransactionRequested'),
   occurredAt: z.iso.datetime(),
-  data: z.object({ ...payloadFields, idempotencyKey: text }).superRefine(applyBusinessRules),
+  data: z.object({ ...payloadFields, idempotencyKey: identifier }).superRefine(applyBusinessRules),
 });
 
 export type WagerTransactionRequestedMessage = z.infer<typeof wagerTransactionRequestedSchema>;
