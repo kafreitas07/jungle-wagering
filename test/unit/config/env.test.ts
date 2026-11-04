@@ -77,3 +77,48 @@ describe('loadEnv', () => {
     );
   });
 });
+
+describe('messaging settings', () => {
+  test('defaults: outbox 500 ms / 25 rows / 30 s lease, consumer 20 s long poll / 5 receives / 20 s grace, worker 1 s', () => {
+    const config = loadEnv(base);
+
+    expect(config.outbox).toEqual({ highAttemptsThreshold: 10, pollIntervalMs: 500, batchSize: 25, leaseMs: 30000 });
+    expect(config.sqs.consumer).toEqual({ pollWaitSeconds: 20, maxReceiveCount: 5, shutdownGraceMs: 20000 });
+    expect(config.pendingWorker).toEqual({ intervalMs: 1000, batchSize: 20 });
+    expect(config.faultInjection).toBeUndefined();
+  });
+
+  test('every value can be overridden by the environment', () => {
+    const config = loadEnv({
+      ...base,
+      OUTBOX_POLL_INTERVAL_MS: '50',
+      OUTBOX_BATCH_SIZE: '10',
+      OUTBOX_LEASE_MS: '5000',
+      SQS_POLL_WAIT_SECONDS: '1',
+      SQS_MAX_RECEIVE_COUNT: '3',
+      SQS_SHUTDOWN_GRACE_MS: '1000',
+      PENDING_WORKER_INTERVAL_MS: '100',
+      PENDING_WORKER_BATCH_SIZE: '5',
+      FAULT_INJECTION: 'crash-after-commit-before-ack',
+    });
+
+    expect(config.outbox).toMatchObject({ pollIntervalMs: 50, batchSize: 10, leaseMs: 5000 });
+    expect(config.sqs.consumer).toEqual({ pollWaitSeconds: 1, maxReceiveCount: 3, shutdownGraceMs: 1000 });
+    expect(config.pendingWorker).toEqual({ intervalMs: 100, batchSize: 5 });
+    expect(config.faultInjection).toBe('crash-after-commit-before-ack');
+  });
+
+  test.each([
+    ['SQS_POLL_WAIT_SECONDS', '21'],
+    ['OUTBOX_BATCH_SIZE', '0'],
+    ['OUTBOX_BATCH_SIZE', '101'],
+    ['PENDING_WORKER_BATCH_SIZE', '0'],
+    ['FAULT_INJECTION', 'explode'],
+  ])('rejects %s=%s and names the variable', (name, value) => {
+    expect(() => loadEnv({ ...base, [name]: value })).toThrow(new RegExp(name));
+  });
+
+  test('a long poll of 0 seconds (short polling) is allowed', () => {
+    expect(loadEnv({ ...base, SQS_POLL_WAIT_SECONDS: '0' }).sqs.consumer.pollWaitSeconds).toBe(0);
+  });
+});

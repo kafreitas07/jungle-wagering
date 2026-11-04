@@ -109,7 +109,7 @@ describe('GET /health/ready (OBS-06, OBS-07)', () => {
 describe('runners are switched by environment', () => {
   test('RUN_HTTP=false does not listen on the port', async () => {
     const port = freePort();
-    const running = await startApplication(testConfig({ RUN_HTTP: 'false', APP_PORT: String(port) }));
+    const running = await startApplication(testConfig({ RUN_HTTP: 'false', RUN_SQS_CONSUMER: 'false', RUN_OUTBOX_PUBLISHER: 'false', RUN_PENDING_WORKER: 'false', APP_PORT: String(port) }));
     try {
       expect(running.httpPort).toBeUndefined();
       await expect(fetch(`http://127.0.0.1:${port}/health/live`)).rejects.toThrow();
@@ -120,7 +120,7 @@ describe('runners are switched by environment', () => {
 
   test('RUN_HTTP=true listens on APP_PORT and serves the health check', async () => {
     const port = freePort();
-    const running = await startApplication(testConfig({ RUN_HTTP: 'true', APP_PORT: String(port) }));
+    const running = await startApplication(testConfig({ RUN_HTTP: 'true', RUN_SQS_CONSUMER: 'false', RUN_OUTBOX_PUBLISHER: 'false', RUN_PENDING_WORKER: 'false', APP_PORT: String(port) }));
     try {
       expect(running.httpPort).toBe(port);
       expect((await api(`http://127.0.0.1:${port}`, 'GET', '/health/live')).status).toBe(200);

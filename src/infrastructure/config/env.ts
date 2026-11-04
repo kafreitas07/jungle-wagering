@@ -33,6 +33,19 @@ const envSchema = z.object({
   PENDING_REF_MAX_DELAY_MS: positiveInt(300_000),
 
   OUTBOX_HIGH_ATTEMPTS_THRESHOLD: positiveInt(10),
+  OUTBOX_POLL_INTERVAL_MS: positiveInt(500),
+  OUTBOX_BATCH_SIZE: z.coerce.number().int().min(1).max(100).default(25),
+  OUTBOX_LEASE_MS: positiveInt(30_000),
+
+  SQS_POLL_WAIT_SECONDS: z.coerce.number().int().min(0).max(20).default(20),
+  SQS_MAX_RECEIVE_COUNT: positiveInt(5),
+  SQS_SHUTDOWN_GRACE_MS: positiveInt(20_000),
+
+  PENDING_WORKER_INTERVAL_MS: positiveInt(1000),
+  PENDING_WORKER_BATCH_SIZE: z.coerce.number().int().min(1).max(100).default(20),
+
+  // Test-only crash point. Never set outside tests.
+  FAULT_INJECTION: z.enum(['crash-after-commit-before-ack']).optional(),
 });
 
 export interface AppConfig {
@@ -48,6 +61,12 @@ export interface AppConfig {
     readonly wagerQueue: string;
     readonly wagerDlq: string;
     readonly eventsQueue: string;
+    readonly consumer: {
+      readonly pollWaitSeconds: number;
+      /** The redrive policy's maxReceiveCount: after this many receives the queue moves the message to the DLQ. */
+      readonly maxReceiveCount: number;
+      readonly shutdownGraceMs: number;
+    };
   };
   readonly runners: {
     readonly http: boolean;
@@ -63,7 +82,15 @@ export interface AppConfig {
   };
   readonly outbox: {
     readonly highAttemptsThreshold: number;
+    readonly pollIntervalMs: number;
+    readonly batchSize: number;
+    readonly leaseMs: number;
   };
+  readonly pendingWorker: {
+    readonly intervalMs: number;
+    readonly batchSize: number;
+  };
+  readonly faultInjection: 'crash-after-commit-before-ack' | undefined;
 }
 
 export class ConfigError extends Error {
@@ -95,6 +122,11 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
       wagerQueue: env.SQS_WAGER_QUEUE,
       wagerDlq: env.SQS_WAGER_DLQ,
       eventsQueue: env.SQS_EVENTS_QUEUE,
+      consumer: {
+        pollWaitSeconds: env.SQS_POLL_WAIT_SECONDS,
+        maxReceiveCount: env.SQS_MAX_RECEIVE_COUNT,
+        shutdownGraceMs: env.SQS_SHUTDOWN_GRACE_MS,
+      },
     },
     runners: {
       http: env.RUN_HTTP,
@@ -110,6 +142,14 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
     },
     outbox: {
       highAttemptsThreshold: env.OUTBOX_HIGH_ATTEMPTS_THRESHOLD,
+      pollIntervalMs: env.OUTBOX_POLL_INTERVAL_MS,
+      batchSize: env.OUTBOX_BATCH_SIZE,
+      leaseMs: env.OUTBOX_LEASE_MS,
     },
+    pendingWorker: {
+      intervalMs: env.PENDING_WORKER_INTERVAL_MS,
+      batchSize: env.PENDING_WORKER_BATCH_SIZE,
+    },
+    faultInjection: env.FAULT_INJECTION,
   };
 }
