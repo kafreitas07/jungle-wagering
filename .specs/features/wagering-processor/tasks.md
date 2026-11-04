@@ -433,9 +433,9 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] `bun run migrate` aplica as migrations no banco da env; o helper de teste usa `wagering_test`
-- [ ] Pool lê `pool.max` da env
-- [ ] Gate completo passa com um teste de conexão (≥ 1 teste de integração)
+- [x] `bun run migrate` aplica as migrations no banco da env; o helper de teste usa `wagering_test`
+- [x] Pool lê `pool.max` da env
+- [x] Gate completo passa com um teste de conexão (≥ 1 teste de integração)
 
 **Tests**: integration
 **Gate**: full
@@ -453,11 +453,11 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Teste de violação por constraint via SQL, cada um esperando o erro do Postgres: `CHECK (balance >= 0)`, `UNIQUE (player_id, currency)`, `UNIQUE (provider_id, idempotency_key)`, `UNIQUE (provider_id, external_transaction_id)`, índice parcial de reversão única, `CHECK` de referência obrigatória, `CHECK` de `kind`/`status`, `CHECK` de `failure_code`, `CHECK` de valor positivo
-- [ ] FK composta rejeita transação com `player_id` ou moeda diferentes da wallet
-- [ ] Trigger rejeita `UPDATE` de linha `PROCESSED`, `REJECTED` e `FAILED`
-- [ ] `down` desfaz a migration sem erro
-- [ ] Gate completo passa; ≥ 14 testes de integração
+- [x] Teste de violação por constraint via SQL, cada um esperando o erro do Postgres: `CHECK (balance >= 0)`, `UNIQUE (player_id, currency)`, `UNIQUE (provider_id, idempotency_key)`, `UNIQUE (provider_id, external_transaction_id)`, índice parcial de reversão única, `CHECK` de referência obrigatória, `CHECK` de `kind`/`status`, `CHECK` de `failure_code`, `CHECK` de valor positivo
+- [x] FK composta rejeita transação com `player_id` ou moeda diferentes da wallet
+- [x] Trigger rejeita `UPDATE` de linha `PROCESSED`, `REJECTED` e `FAILED`
+- [x] `down` desfaz a migration sem erro
+- [x] Gate completo passa; ≥ 14 testes de integração
 
 **Tests**: integration
 **Gate**: full
@@ -475,12 +475,12 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Teste de violação para cada constraint do ledger: `amount > 0`, `balance_after >= 0`, `CHECK` aritmético, `UNIQUE (transaction_id)`, `UNIQUE (wallet_id, wallet_version)`, FK composta de moeda
-- [ ] `UPDATE`, `DELETE` e `TRUNCATE` no ledger falham pelo trigger
-- [ ] Inbox rejeita `(consumer_name, message_id)` repetido; outbox tem `attempts`, `next_attempt_at`, `locked_until`, `published_at`
-- [ ] Ciclo up → down → up completo de todas as migrations passa em banco real
-- [ ] `assertReconciled(walletIds)` calcula Σ CREDIT − Σ DEBIT e compara com `wallets.balance`
-- [ ] Gate completo passa; ≥ 14 testes de integração
+- [x] Teste de violação para cada constraint do ledger: `amount > 0`, `balance_after >= 0`, `CHECK` aritmético, `UNIQUE (transaction_id)`, `UNIQUE (wallet_id, wallet_version)`, FK composta de moeda
+- [x] `UPDATE`, `DELETE` e `TRUNCATE` no ledger falham pelo trigger
+- [x] Inbox rejeita `(consumer_name, message_id)` repetido; outbox tem `attempts`, `next_attempt_at`, `locked_until`, `published_at`
+- [x] Ciclo up → down → up completo de todas as migrations passa em banco real
+- [x] `assertReconciled(walletIds)` calcula Σ CREDIT − Σ DEBIT e compara com `wallets.balance`
+- [x] Gate completo passa; ≥ 14 testes de integração
 
 **Tests**: integration
 **Gate**: full
@@ -498,10 +498,10 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Round-trip wallet e lançamento: `numeric` → string → `Money` → string preserva `'0.10'` e `'999999999999999999.99'` sem perda
-- [ ] Mapeamento só por `EntitySchema`; nenhum decorator nem import do ORM em `src/domain`
-- [ ] O mapper hidrata via `rehydrate`; nenhum campo de valor tipado como `number`
-- [ ] Gate completo passa; ≥ 8 testes
+- [x] Round-trip wallet e lançamento: `numeric` → string → `Money` → string preserva `'0.10'` e `'999999999999999999.99'` sem perda
+- [x] Mapeamento só por `EntitySchema`; nenhum decorator nem import do ORM em `src/domain`
+- [x] O mapper hidrata via `rehydrate`; nenhum campo de valor tipado como `number`
+- [x] Gate completo passa; ≥ 8 testes
 
 **Tests**: integration
 **Gate**: full
@@ -519,9 +519,9 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Round-trip de transação em cada status preserva todos os campos, incluindo `failureCode`, `balanceAfter` e `referenceTransactionId`
-- [ ] `payload` da outbox é `jsonb` e volta idêntico
-- [ ] Gate completo passa; ≥ 6 testes
+- [x] Round-trip de transação em cada status preserva todos os campos, incluindo `failureCode`, `balanceAfter` e `referenceTransactionId`
+- [x] `payload` da outbox é `jsonb` e volta idêntico
+- [x] Gate completo passa; ≥ 6 testes
 
 **Tests**: integration
 **Gate**: full
@@ -539,11 +539,11 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] **Primeiro teste prova que o `lock_timeout` vale dentro de `em.transactional`**: uma segunda transação que espera a mesma wallet falha com `55P03` perto do limite configurado
-- [ ] `save` com versão defasada afeta 0 linhas e lança `OptimisticLockError`
-- [ ] Lock de uma wallet não bloqueia outra wallet (sem lock global)
-- [ ] Falha dentro do `run` dá rollback completo
-- [ ] Gate completo passa; ≥ 6 testes
+- [x] **Primeiro teste prova que o `lock_timeout` vale dentro de `em.transactional`**: uma segunda transação que espera a mesma wallet falha com `55P03` perto do limite configurado
+- [x] `save` com versão defasada afeta 0 linhas e lança `OptimisticLockError`
+- [x] Lock de uma wallet não bloqueia outra wallet (sem lock global)
+- [x] Falha dentro do `run` dá rollback completo
+- [x] Gate completo passa; ≥ 6 testes
 
 **Tests**: integration
 **Gate**: full
@@ -561,10 +561,10 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] `findByIdempotencyKey`, `findByExternalId`, `findReference` e `hasProcessedReversal` retornam o esperado
-- [ ] `inbox.tryRecord` distingue primeira vez, duplicata com mesmo hash e conflito de hash
-- [ ] Falha injetada depois de `ledger.append` não persiste nada (atomicidade wallet + ledger + inbox + outbox)
-- [ ] Gate completo passa; ≥ 10 testes
+- [x] `findByIdempotencyKey`, `findByExternalId`, `findReference` e `hasProcessedReversal` retornam o esperado
+- [x] `inbox.tryRecord` distingue primeira vez, duplicata com mesmo hash e conflito de hash
+- [x] Falha injetada depois de `ledger.append` não persiste nada (atomicidade wallet + ledger + inbox + outbox)
+- [x] Gate completo passa; ≥ 10 testes
 
 **Tests**: integration
 **Gate**: full
@@ -584,10 +584,10 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Saldo inicial 1000.00: wallet `version 1`, 1 transação `OPENING` `PROCESSED`, 1 lançamento CREDIT, eventos `WagerTransactionProcessed` e `WalletBalanceChanged` na outbox
-- [ ] Saldo inicial 0.00: wallet sem transação, sem lançamento e sem `WalletBalanceChanged`
-- [ ] Segunda wallet para o mesmo jogador e moeda → `WalletAlreadyExists`, inclusive com 10 criações concorrentes (exatamente 1 vence)
-- [ ] `assertReconciled` passa; gate completo; ≥ 6 testes
+- [x] Saldo inicial 1000.00: wallet `version 1`, 1 transação `OPENING` `PROCESSED`, 1 lançamento CREDIT, eventos `WagerTransactionProcessed` e `WalletBalanceChanged` na outbox
+- [x] Saldo inicial 0.00: wallet sem transação, sem lançamento e sem `WalletBalanceChanged`
+- [x] Segunda wallet para o mesmo jogador e moeda → `WalletAlreadyExists`, inclusive com 10 criações concorrentes (exatamente 1 vence)
+- [x] `assertReconciled` passa; gate completo; ≥ 6 testes
 
 **Tests**: integration
 **Gate**: full
@@ -605,11 +605,11 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Um teste por `failureCode` de rejeição, com a transação `REJECTED` persistida, saldo e ledger intactos e evento `WagerTransactionRejected`
-- [ ] `WALLET_NOT_FOUND`, `WALLET_PLAYER_MISMATCH` e `CURRENCY_MISMATCH` não gravam nada
-- [ ] BET → WIN → LOSS: saldos, lançamentos e `version` esperados; REFUND e ROLLBACK creditam e debitam conforme a referência; segunda reversão da mesma referência → `REFERENCE_ALREADY_REVERSED`
-- [ ] Referência ausente → `PENDING_REFERENCE` com `PendingReference` na outbox; wallets diferentes processam em paralelo
-- [ ] Todo teste termina com `assertReconciled`; gate completo; ≥ 30 testes
+- [x] Um teste por `failureCode` de rejeição, com a transação `REJECTED` persistida, saldo e ledger intactos e evento `WagerTransactionRejected`
+- [x] `WALLET_NOT_FOUND`, `WALLET_PLAYER_MISMATCH` e `CURRENCY_MISMATCH` não gravam nada
+- [x] BET → WIN → LOSS: saldos, lançamentos e `version` esperados; REFUND e ROLLBACK creditam e debitam conforme a referência; segunda reversão da mesma referência → `REFERENCE_ALREADY_REVERSED`
+- [x] Referência ausente → `PENDING_REFERENCE` com `PendingReference` na outbox; wallets diferentes processam em paralelo
+- [x] Todo teste termina com `assertReconciled`; gate completo; ≥ 30 testes
 
 **Tests**: integration
 **Gate**: full
@@ -627,11 +627,11 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Replay devolve o mesmo `transactionId` e o status persistido (PROCESSED, REJECTED ou PENDING_REFERENCE) com `idempotentReplay: true`, sem novo lançamento
-- [ ] Replay de transação que saiu de `PENDING_REFERENCE` reflete o estado atual
-- [ ] Mesma key com `amount` diferente → conflito, nada aplicado; mesmo id externo com key diferente → conflito
-- [ ] A restrição única barra o caso de wallets diferentes com a mesma key
-- [ ] Gate completo; ≥ 10 testes
+- [x] Replay devolve o mesmo `transactionId` e o status persistido (PROCESSED, REJECTED ou PENDING_REFERENCE) com `idempotentReplay: true`, sem novo lançamento
+- [x] Replay de transação que saiu de `PENDING_REFERENCE` reflete o estado atual
+- [x] Mesma key com `amount` diferente → conflito, nada aplicado; mesmo id externo com key diferente → conflito
+- [x] A restrição única barra o caso de wallets diferentes com a mesma key
+- [x] Gate completo; ≥ 10 testes
 
 **Tests**: integration
 **Gate**: full
@@ -649,10 +649,10 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Erro transitório que passa na segunda tentativa resulta em sucesso; a reexecução cai na deduplicação e vira replay ou conflito
-- [ ] Quatro falhas seguidas → `ConcurrencyConflict` sem efeito parcial
-- [ ] Cada retry incrementa `lock_conflicts_total` via `MetricsPort`
-- [ ] Gate completo; ≥ 8 testes
+- [x] Erro transitório que passa na segunda tentativa resulta em sucesso; a reexecução cai na deduplicação e vira replay ou conflito
+- [x] Quatro falhas seguidas → `ConcurrencyConflict` sem efeito parcial
+- [x] Cada retry incrementa `lock_conflicts_total` via `MetricsPort`
+- [x] Gate completo; ≥ 8 testes
 
 **Tests**: integration
 **Gate**: full
@@ -670,9 +670,9 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] `GetWallet` devolve `id`, `playerId`, `balance`, `version`; inexistente → `WalletNotFound`
-- [ ] As duas consultas de transação devolvem status, `failureCode`, `money`, `kind`, referência e `balanceAfter`; inexistente → `TransactionNotFound`
-- [ ] Gate completo; ≥ 6 testes
+- [x] `GetWallet` devolve `id`, `playerId`, `balance`, `version`; inexistente → `WalletNotFound`
+- [x] As duas consultas de transação devolvem status, `failureCode`, `money`, `kind`, referência e `balanceAfter`; inexistente → `TransactionNotFound`
+- [x] Gate completo; ≥ 6 testes
 
 **Tests**: integration
 **Gate**: full
@@ -690,10 +690,10 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Ledger de 120 lançamentos paginado em 3 páginas (limit 50) sem repetição nem salto
-- [ ] Inserção concorrente durante a paginação não duplica nem perde lançamentos já vistos
-- [ ] Cursor inválido → erro de validação; `limit` default 50, máximo 200
-- [ ] Gate completo; ≥ 6 testes
+- [x] Ledger de 120 lançamentos paginado em 3 páginas (limit 50) sem repetição nem salto
+- [x] Inserção concorrente durante a paginação não duplica nem perde lançamentos já vistos
+- [x] Cursor inválido → erro de validação; `limit` default 50, máximo 200
+- [x] Gate completo; ≥ 6 testes
 
 **Tests**: integration
 **Gate**: full
