@@ -5,7 +5,7 @@ import { OpenWallet } from '../../../src/application/use-cases/open-wallet';
 import { InvalidMoneyError } from '../../../src/domain/errors/domain-errors';
 import { closeTestOrm, getTestOrm } from '../../support/db';
 import { FakeClock, outboxEventTypes, testUnitOfWork } from '../../support/context';
-import { assertReconciled } from '../../support/reconcile';
+import { assertReconciledViaApp } from '../../support/reconcile';
 import { sql, uuid } from '../../support/sql';
 
 let orm: MikroORM;
@@ -84,7 +84,7 @@ describe('OpenWallet with a positive initial balance (WAL-01, OUT-03, LEDG-01)',
   test('the ledger reconciles with the balance', async () => {
     const wallet = await open();
 
-    await assertReconciled(orm, [wallet.id]);
+    await assertReconciledViaApp(orm, [wallet.id]);
   });
 });
 
@@ -96,7 +96,7 @@ describe('OpenWallet with a zero initial balance (WAL-02)', () => {
     expect(await sql(orm, 'select 1 from wager_transactions where wallet_id = ?', [wallet.id])).toHaveLength(0);
     expect(await sql(orm, 'select 1 from wallet_ledger_entries where wallet_id = ?', [wallet.id])).toHaveLength(0);
     expect(await outboxEventTypes(orm, wallet.id)).toEqual([]);
-    await assertReconciled(orm, [wallet.id]);
+    await assertReconciledViaApp(orm, [wallet.id]);
   });
 });
 
@@ -134,7 +134,7 @@ describe('OpenWallet uniqueness per player and currency (WAL-03, WAL-04)', () =>
     const wallets = await sql(orm, 'select id from wallets where player_id = ?', [playerId]);
     expect(wallets).toHaveLength(1);
     expect(await sql(orm, 'select 1 from wallet_ledger_entries where wallet_id = ?', [wallets[0]?.id])).toHaveLength(1);
-    await assertReconciled(orm, [String(wallets[0]?.id)]);
+    await assertReconciledViaApp(orm, [String(wallets[0]?.id)]);
   });
 });
 

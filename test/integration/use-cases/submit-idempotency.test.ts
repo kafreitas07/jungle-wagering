@@ -8,7 +8,7 @@ import { Money } from '../../../src/domain/money/money';
 import type { Wallet } from '../../../src/domain/wallet/wallet';
 import { closeTestOrm, getTestOrm } from '../../support/db';
 import { FakeClock, testUnitOfWork } from '../../support/context';
-import { assertReconciled } from '../../support/reconcile';
+import { assertReconciledViaApp } from '../../support/reconcile';
 import { sql, uuid } from '../../support/sql';
 
 let orm: MikroORM;
@@ -69,7 +69,7 @@ describe('replay of the same key and payload (IDEM-02, IDEM-03)', () => {
     expect(second.transaction.status).toBe('PROCESSED');
     expect(second.transaction.balanceAfter?.toString()).toBe('975.00');
     expect(await state(wallet.id)).toEqual(before);
-    await assertReconciled(orm, [wallet.id]);
+    await assertReconciledViaApp(orm, [wallet.id]);
   });
 
   test('a replay reports the balance of the original processing, not the current one', async () => {
@@ -146,7 +146,7 @@ describe('replay of the same key and payload (IDEM-02, IDEM-03)', () => {
     expect(results.filter((r) => r.replay)).toHaveLength(19);
     expect(new Set(results.map((r) => r.transaction.id)).size).toBe(1);
     expect(await state(wallet.id)).toMatchObject({ wallet: { balance: '975.00', version: 2 }, ledger: 2, transactions: 2 });
-    await assertReconciled(orm, [wallet.id]);
+    await assertReconciledViaApp(orm, [wallet.id]);
   });
 });
 
@@ -224,6 +224,6 @@ describe('conflicts (IDEM-04, IDEM-05)', () => {
       rejected[0]!.reason instanceof IdempotencyConflictError || isUniqueViolation(rejected[0]!.reason, 'wager_transactions_idempotency_key'),
     ).toBe(true);
     expect(await sql(orm, `select 1 from wager_transactions where provider_id = 'provider-a' and idempotency_key = ?`, [key])).toHaveLength(1);
-    await assertReconciled(orm, [first.id, second.id]);
+    await assertReconciledViaApp(orm, [first.id, second.id]);
   });
 });

@@ -18,6 +18,12 @@ export function testDatabaseConfig(): DatabaseConfig {
 }
 
 let shared: MikroORM | undefined;
+const closers: (() => Promise<void>)[] = [];
+
+/** Registers something to shut down together with the shared ORM (e.g. an app started lazily by a helper). */
+export function onTestOrmClose(close: () => Promise<void>): void {
+  closers.push(close);
+}
 let schemaRecreated = false;
 
 /**
@@ -38,6 +44,9 @@ export async function getTestOrm(): Promise<MikroORM> {
 }
 
 export async function closeTestOrm(): Promise<void> {
+  for (const close of closers.splice(0)) {
+    await close();
+  }
   if (shared) {
     await shared.close();
     shared = undefined;
