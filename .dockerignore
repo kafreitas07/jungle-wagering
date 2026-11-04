@@ -1,0 +1,12 @@
+node_modules
+.git
+.specs
+.claude
+.env
+.env.*
+test
+spike
+docs
+*.md
+instrucoes-teste.md
+CLAUDE.md
