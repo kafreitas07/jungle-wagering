@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import type { SQSClient } from '@aws-sdk/client-sqs';
 import { type DynamicModule, Inject, Module, type OnApplicationShutdown } from '@nestjs/common';
 import { MikroORM } from '@mikro-orm/postgresql';
-import { type Clock, type LoggerPort, type MetricsPort, NoopLogger, NoopMetrics, type ProviderIdentityPort, SystemClock, type UnitOfWork } from '../application/ports';
+import { type Clock, type LoggerPort, type MetricsPort, type ProviderIdentityPort, SystemClock, type UnitOfWork } from '../application/ports';
 import type { AppConfig } from './config/env';
 import { type DependencyProbe, PostgresProbe, SqsProbe } from './health/dependency-probes';
 import { GetTransactionByExternalId, GetTransactionById, GetWallet } from '../application/use-cases/queries';
@@ -25,11 +25,16 @@ import {
   DEPENDENCY_PROBES,
   LOGGER,
   METRICS,
+  METRICS_REGISTRY,
   ORM,
   PROVIDER_IDENTITY,
   SQS_CLIENT,
   UNIT_OF_WORK,
 } from './http/tokens';
+import { MetricsController } from './http/metrics.controller';
+import { createLogger } from './observability/logger';
+import { PrometheusMetrics } from './observability/metrics';
+import { readOutboxStats } from './observability/outbox-stats';
 import { OutboxPublisher } from './messaging/outbox-publisher';
 import { PendingReferenceWorker } from './messaging/pending-reference-worker';
 import { SqsConsumer } from './messaging/sqs-consumer';
@@ -63,14 +68,24 @@ export class AppModule {
   static forRoot(config: AppConfig, overrides: AppOverrides = {}): DynamicModule {
     return {
       module: AppModule,
-      controllers: [HealthController, WalletsController, ReconciliationController, WageringController],
+      controllers: [HealthController, MetricsController, WalletsController, ReconciliationController, WageringController],
       providers: [
         { provide: APP_CONFIG, useValue: config },
         { provide: ORM, useFactory: () => MikroORM.init(createOrmConfig(config.database)) },
         { provide: SQS_CLIENT, useFactory: () => createSqsClient(config.sqs) },
         { provide: CLOCK, useValue: overrides.clock ?? new SystemClock() },
-        { provide: LOGGER, useValue: overrides.logger ?? new NoopLogger() },
-        { provide: METRICS, useValue: overrides.metrics ?? new NoopMetrics() },
+        { provide: LOGGER, useValue: overrides.logger ?? createLogger({ level: config.logLevel }) },
+        {
+          provide: METRICS_REGISTRY,
+          inject: [ORM],
+          useFactory: (orm: MikroORM) =>
+            new PrometheusMetrics({ outboxStats: () => readOutboxStats(orm, config.outbox.highAttemptsThreshold) }),
+        },
+        {
+          provide: METRICS,
+          inject: [METRICS_REGISTRY],
+          useFactory: (registry: PrometheusMetrics): MetricsPort => overrides.metrics ?? registry,
+        },
         {
           provide: UNIT_OF_WORK,
           inject: [ORM],
@@ -100,6 +115,7 @@ export class AppModule {
               clock,
               referencePolicy: config.pendingReference,
               concurrencyRetry: new ConcurrencyRetry({ metrics }),
+              metrics,
             }),
         },
         {
@@ -138,10 +154,10 @@ export class AppModule {
         },
         {
           provide: OutboxPublisher,
-          inject: [UNIT_OF_WORK, SqsAdapter, CLOCK, LOGGER],
-          useFactory: (unitOfWork: UnitOfWork, adapter: SqsAdapter, clock: Clock, logger: LoggerPort) =>
+          inject: [UNIT_OF_WORK, SqsAdapter, CLOCK, LOGGER, METRICS],
+          useFactory: (unitOfWork: UnitOfWork, adapter: SqsAdapter, clock: Clock, logger: LoggerPort, metrics: MetricsPort) =>
             new OutboxPublisher(
-              new PublishOutboxBatch({ unitOfWork, publisher: adapter, clock, logger, batchSize: config.outbox.batchSize, leaseMs: config.outbox.leaseMs }),
+              new PublishOutboxBatch({ unitOfWork, publisher: adapter, clock, logger, metrics, batchSize: config.outbox.batchSize, leaseMs: config.outbox.leaseMs }),
               { intervalMs: config.outbox.pollIntervalMs, batchSize: config.outbox.batchSize, logger },
             ),
         },

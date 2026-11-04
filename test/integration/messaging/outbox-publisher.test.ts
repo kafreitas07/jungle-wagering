@@ -6,7 +6,7 @@ import { PublishOutboxBatch } from '../../../src/application/use-cases/publish-o
 import { OutboxMessage } from '../../../src/domain/messaging/outbox-message';
 import { OutboxPublisher } from '../../../src/infrastructure/messaging/outbox-publisher';
 import { SqsAdapter } from '../../../src/infrastructure/messaging/sqs.adapter';
-import { FakeClock, testUnitOfWork } from '../../support/context';
+import { FakeClock, RecordingMetrics, testUnitOfWork } from '../../support/context';
 import { closeTestOrm, getTestOrm } from '../../support/db';
 import { drainOutbox, openWallets, pendingOutbox } from '../../support/messaging';
 import { createTestQueues, type TestQueues } from '../../support/queues';
@@ -199,6 +199,20 @@ describe('the queue is unavailable (OUT-10)', () => {
     expect(String(row.last_error)).toBeString();
     expect(String(row.last_error).length).toBeGreaterThan(0);
     expect(await pendingOutbox(orm, [wallet!])).toBe(2);
+  });
+
+  test('each event that failed to publish is counted as a retry, and a clean round counts none', async () => {
+    const [wallet] = await openWallets(orm, clock, 1);
+    const metrics = new RecordingMetrics();
+    const count = () => metrics.counts.filter((entry) => entry.metric === 'retries_total' && entry.labels?.reason === 'outbox_publish').length;
+
+    await new PublishOutboxBatch({ unitOfWork: testUnitOfWork(orm), publisher: unreachable(), clock, metrics }).execute();
+    expect(count()).toBe(2);
+
+    clock.advance(10_000);
+    await new PublishOutboxBatch({ unitOfWork: testUnitOfWork(orm), publisher: queues.adapter, clock, metrics }).execute();
+    expect(count()).toBe(2);
+    expect(await pendingOutbox(orm, [wallet!])).toBe(0);
   });
 
   test('the backoff doubles on each failure and the event is not tried before it is due', async () => {

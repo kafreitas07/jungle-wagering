@@ -81,6 +81,7 @@ describe('the reference arrives later (PREF-02, PREF-03)', () => {
     const round = await workerOn().runOnce();
 
     expect(round).toMatchObject({ processed: 1, failed: 0 });
+    expect(metrics.counts).toContainEqual({ metric: 'wager_transactions_total', labels: { kind: 'ROLLBACK', status: 'PROCESSED' } });
     const after = await row(pendingId);
     expect(after.status).toBe('PROCESSED');
     expect(after.reference_transaction_id).not.toBeNull();
@@ -117,6 +118,7 @@ describe('the reference arrives later (PREF-02, PREF-03)', () => {
     }
 
     expect(delays).toEqual([2000, 4000, 8000, 16000]);
+    expect(metrics.counts.filter((entry) => entry.metric === 'retries_total' && entry.labels?.reason === 'pending_reference')).toHaveLength(4);
     expect(await eventTypes(pendingId)).toEqual(['WagerTransactionPendingReference']);
   });
 
@@ -152,6 +154,7 @@ describe('the reference never arrives (PREF-04)', () => {
     expect(final.reference_attempts).toBe(10);
     expect(final.next_attempt_at).toBeNull();
     expect(last.rejected).toBe(1);
+    expect(metrics.counts).toContainEqual({ metric: 'wager_transactions_total', labels: { kind: 'ROLLBACK', status: 'REJECTED' } });
     expect(await eventTypes(pendingId)).toEqual(['WagerTransactionPendingReference', 'WagerTransactionRejected']);
     expect(await balanceOf(orm, wallet.id)).toBe('1000.00');
     expect(await countFor(orm, 'wallet_ledger_entries', wallet.id)).toBe(1);
