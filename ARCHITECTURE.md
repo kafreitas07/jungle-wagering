@@ -1,7 +1,3 @@
-# Arquitetura
-
-Decisões, trade-offs e limitações do Distributed Wagering Processor. Os requisitos detalhados estão em `.specs/features/wagering-processor/spec.md`.
-
 ## 1. Visão geral
 
 Montei o projeto como um monólito modular com arquitetura hexagonal, para facilitar a criação dos testes. O domínio guarda as regras de negócio e não depende de framework nem de banco. A aplicação administra os casos de uso, e a infraestrutura cuida do banco, da fila e do HTTP.
