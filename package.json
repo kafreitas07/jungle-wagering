@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "bun run src/main.ts",
-    "spike": "bun run spike/run.ts",
+    "demo": "bun run scripts/demo.ts",
     "migrate": "bun run src/infrastructure/persistence/migrate.ts",
     "typecheck": "tsc --noEmit",
     "test:unit": "bun test test/unit",
