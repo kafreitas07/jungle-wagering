@@ -906,9 +906,9 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Envia, recebe, apaga e altera visibilidade em LocalStack real, com `MessageGroupId` e `MessageDeduplicationId`
-- [ ] Mensagem recebida 5 vezes sem ack vai para `wager-transactions-dlq.fifo` (redrive)
-- [ ] As três filas existem após `docker compose up`; gate completo; ≥ 5 testes
+- [x] Envia, recebe, apaga e altera visibilidade em LocalStack real, com `MessageGroupId` e `MessageDeduplicationId`
+- [x] Mensagem recebida 5 vezes sem ack vai para `wager-transactions-dlq.fifo` (redrive)
+- [x] As três filas existem após `docker compose up`; gate completo; ≥ 5 testes
 
 **Tests**: integration
 **Gate**: full
@@ -926,11 +926,11 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Evento só aparece em `wallet-events.fifo` depois do commit; publisher desligado acumula pendentes e outra instância publica ao subir
-- [ ] 2 publishers sobre a mesma outbox: cada evento publicado sem que dois peguem a mesma linha
-- [ ] Crash depois do claim: outra instância publica quando `locked_until` expira
-- [ ] SQS indisponível: `attempts` sobe, `next_attempt_at` aplica backoff e nada é descartado; nenhuma transação aberta durante a chamada de rede
-- [ ] Gate completo; ≥ 8 testes
+- [x] Evento só aparece em `wallet-events.fifo` depois do commit; publisher desligado acumula pendentes e outra instância publica ao subir
+- [x] 2 publishers sobre a mesma outbox: cada evento publicado sem que dois peguem a mesma linha
+- [x] Crash depois do claim: outra instância publica quando `locked_until` expira
+- [x] SQS indisponível: `attempts` sobe, `next_attempt_at` aplica backoff e nada é descartado; nenhuma transação aberta durante a chamada de rede
+- [x] Gate completo; ≥ 8 testes
 
 **Tests**: integration
 **Gate**: full
@@ -948,11 +948,11 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Mensagem válida é processada pelo mesmo use case; a mesma mensagem 2× produz 1 transação e 1 lançamento e incrementa `inbox_duplicates_total`
-- [ ] Rejeição de negócio persiste `REJECTED` e faz ack; ack só ocorre depois do commit
-- [ ] Malformada, `kind = OPENING` e `messageId` com payload diferente vão à DLQ com ack e nada é gravado; `IDEMPOTENCY_KEY_REUSED` e `EXTERNAL_ID_CONFLICT` também
-- [ ] `messageId` acima de 255 caracteres é malformada: DLQ + ack, com teste
-- [ ] Gate completo; ≥ 10 testes
+- [x] Mensagem válida é processada pelo mesmo use case; a mesma mensagem 2× produz 1 transação e 1 lançamento e incrementa `inbox_duplicates_total`
+- [x] Rejeição de negócio persiste `REJECTED` e faz ack; ack só ocorre depois do commit
+- [x] Malformada, `kind = OPENING` e `messageId` com payload diferente vão à DLQ com ack e nada é gravado; `IDEMPOTENCY_KEY_REUSED` e `EXTERNAL_ID_CONFLICT` também
+- [x] `messageId` acima de 255 caracteres é malformada: DLQ + ack, com teste
+- [x] Gate completo; ≥ 10 testes
 
 **Tests**: integration
 **Gate**: full
@@ -970,10 +970,10 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Erro transitório (Postgres indisponível) não faz ack e altera a visibilidade com backoff; recuperado o banco, a mensagem é processada
-- [ ] Após 5 recebimentos a mensagem chega à DLQ e `dlq_messages_total` incrementa
-- [ ] `SIGTERM` para o polling, conclui as mensagens em andamento em até 20 s e devolve a visibilidade das demais
-- [ ] Gate completo; ≥ 6 testes
+- [x] Erro transitório (Postgres indisponível) não faz ack e altera a visibilidade com backoff; recuperado o banco, a mensagem é processada
+- [x] Após 5 recebimentos a mensagem chega à DLQ e `dlq_messages_total` incrementa
+- [x] `SIGTERM` para o polling, conclui as mensagens em andamento em até 20 s e devolve a visibilidade das demais
+- [x] Gate completo; ≥ 6 testes
 
 **Tests**: integration
 **Gate**: full
@@ -991,10 +991,10 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] ROLLBACK antes da BET fica `PENDING_REFERENCE` (202); depois da BET, o worker o processa e o saldo volta ao inicial
-- [ ] Após 10 tentativas sem referência → `REJECTED` `REFERENCE_NOT_FOUND` com `WagerTransactionRejected`
-- [ ] 2 workers sobre a mesma pendência: exatamente um processa, sem deadlock
-- [ ] Erro permanente → `FAILED` `PROCESSING_FAILED` sem evento de rejeição; gate completo; ≥ 8 testes
+- [x] ROLLBACK antes da BET fica `PENDING_REFERENCE` (202); depois da BET, o worker o processa e o saldo volta ao inicial
+- [x] Após 10 tentativas sem referência → `REJECTED` `REFERENCE_NOT_FOUND` com `WagerTransactionRejected`
+- [x] 2 workers sobre a mesma pendência: exatamente um processa, sem deadlock
+- [x] Erro permanente → `FAILED` `PROCESSING_FAILED` sem evento de rejeição; gate completo; ≥ 8 testes
 
 **Tests**: integration
 **Gate**: full
@@ -1012,10 +1012,10 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Crash após commit e antes do ack: a redelivery é detectada pela inbox, sem duplicar efeito
-- [ ] Mesma operação por HTTP e por SQS é aplicada uma única vez (a segunda é replay)
-- [ ] Reinício dos processos no meio da carga termina com consistência final e `assertReconciled`
-- [ ] Ponto de falha só existe com a variável de ambiente de teste; gate de build; ≥ 4 testes
+- [x] Crash após commit e antes do ack: a redelivery é detectada pela inbox, sem duplicar efeito
+- [x] Mesma operação por HTTP e por SQS é aplicada uma única vez (a segunda é replay)
+- [x] Reinício dos processos no meio da carga termina com consistência final e `assertReconciled`
+- [x] Ponto de falha só existe com a variável de ambiente de teste; gate de build; ≥ 4 testes
 
 **Tests**: concurrency
 **Gate**: build

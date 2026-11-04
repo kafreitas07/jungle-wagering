@@ -507,11 +507,11 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | REV-09 | P1: Reversões e referências | Tasks (T8, T21) | Done |
 | REV-10 | P1: Reversões e referências | Tasks (T8, T21) | Done |
 | PREF-01 | P1: Referências fora de ordem | Tasks (T8, T21) | Done |
-| PREF-02 | P1: Referências fora de ordem | Tasks (T7, T39) | Pending |
-| PREF-03 | P1: Referências fora de ordem | Tasks (T39, T40) | Pending |
-| PREF-04 | P1: Referências fora de ordem | Tasks (T39) | Pending |
-| PREF-05 | P1: Referências fora de ordem | Tasks (T39) | Pending |
-| PREF-06 | P1: Referências fora de ordem | Tasks (T39) | Pending |
+| PREF-02 | P1: Referências fora de ordem | Tasks (T7, T39) | Done |
+| PREF-03 | P1: Referências fora de ordem | Tasks (T39, T40) | Done |
+| PREF-04 | P1: Referências fora de ordem | Tasks (T39) | Done |
+| PREF-05 | P1: Referências fora de ordem | Tasks (T39) | Done |
+| PREF-06 | P1: Referências fora de ordem | Tasks (T39) | Done |
 | IDEM-01 | P1: Idempotência persistente | Tasks (T30) | Done |
 | IDEM-02 | P1: Idempotência persistente | Tasks (T14, T22) | Done |
 | IDEM-03 | P1: Idempotência persistente | Tasks (T22, T30) | Done |
@@ -535,31 +535,31 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | LEDG-05 | P1: Ledger imutável | Tasks (T25, T29) | Done |
 | LEDG-06 | P1: Ledger imutável | Tasks (T11, T25, T29) | Done |
 | LEDG-07 | P1: Ledger imutável | Tasks (T5) | Done |
-| SQS-01 | P1: Consumo SQS com inbox | Tasks (T37) | Pending |
-| SQS-02 | P1: Consumo SQS com inbox | Tasks (T19, T37) | Pending |
-| SQS-03 | P1: Consumo SQS com inbox | Tasks (T37) | Pending |
-| SQS-04 | P1: Consumo SQS com inbox | Tasks (T37) | Pending |
-| SQS-05 | P1: Consumo SQS com inbox | Tasks (T37) | Pending |
-| SQS-06 | P1: Consumo SQS com inbox | Tasks (T38) | Pending |
-| SQS-07 | P1: Consumo SQS com inbox | Tasks (T38) | Pending |
-| SQS-08 | P1: Consumo SQS com inbox | Tasks (T37) | Pending |
-| SQS-09 | P1: Consumo SQS com inbox | Tasks (T40) | Pending |
-| SQS-10 | P1: Consumo SQS com inbox | Tasks (T38) | Pending |
-| SQS-11 | P1: Consumo SQS com inbox | Tasks (T37) | Pending |
-| SQS-12 | P1: Consumo SQS com inbox | Tasks (T37) | Pending |
-| SQS-13 | P1: Consumo SQS com inbox | Tasks (T37) | Pending |
+| SQS-01 | P1: Consumo SQS com inbox | Tasks (T37) | Done |
+| SQS-02 | P1: Consumo SQS com inbox | Tasks (T19, T37) | Done |
+| SQS-03 | P1: Consumo SQS com inbox | Tasks (T37) | Done |
+| SQS-04 | P1: Consumo SQS com inbox | Tasks (T37) | Done |
+| SQS-05 | P1: Consumo SQS com inbox | Tasks (T37) | Done |
+| SQS-06 | P1: Consumo SQS com inbox | Tasks (T38) | Done |
+| SQS-07 | P1: Consumo SQS com inbox | Tasks (T38) | Done |
+| SQS-08 | P1: Consumo SQS com inbox | Tasks (T37) | Done |
+| SQS-09 | P1: Consumo SQS com inbox | Tasks (T40) | Done |
+| SQS-10 | P1: Consumo SQS com inbox | Tasks (T38) | Done |
+| SQS-11 | P1: Consumo SQS com inbox | Tasks (T37) | Done |
+| SQS-12 | P1: Consumo SQS com inbox | Tasks (T37) | Done |
+| SQS-13 | P1: Consumo SQS com inbox | Tasks (T37) | Done |
 | OUT-01 | P1: Transactional outbox | Tasks (T19, T21) | Done |
-| OUT-02 | P1: Transactional outbox | Tasks (T36) | Pending |
+| OUT-02 | P1: Transactional outbox | Tasks (T36) | Done |
 | OUT-03 | P1: Transactional outbox | Tasks (T20, T21) | Done |
 | OUT-04 | P1: Transactional outbox | Tasks (T20, T21) | Done |
 | OUT-05 | P1: Transactional outbox | Tasks (T21) | Done |
 | OUT-06 | P1: Transactional outbox | Tasks (T21) | Done |
 | OUT-07 | P1: Transactional outbox | Tasks (T9) | Done |
-| OUT-08 | P1: Transactional outbox | Tasks (T36) | Pending |
-| OUT-09 | P1: Transactional outbox | Tasks (T36, T40) | Pending |
-| OUT-10 | P1: Transactional outbox | Tasks (T36) | Pending |
-| OUT-11 | P1: Transactional outbox | Tasks (T36) | Pending |
-| OUT-12 | P1: Transactional outbox | Tasks (T36) | Pending |
+| OUT-08 | P1: Transactional outbox | Tasks (T36) | Done |
+| OUT-09 | P1: Transactional outbox | Tasks (T36, T40) | Done |
+| OUT-10 | P1: Transactional outbox | Tasks (T36) | Done |
+| OUT-11 | P1: Transactional outbox | Tasks (T36) | Done |
+| OUT-12 | P1: Transactional outbox | Tasks (T36) | Done |
 | REC-01 | P1: Reconciliação | Tasks (T33) | Done |
 | REC-02 | P1: Reconciliação | Tasks (T33) | Done |
 | REC-03 | P1: Reconciliação | Tasks (T33) | Done |
@@ -582,8 +582,8 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | DB-03 | P1: Schema e migrations | Tasks (T16, T17) | Done |
 | DB-04 | P1: Schema e migrations | Tasks (T16, T17) | Done |
 | TEST-01 | P1: Testes obrigatórios | Tasks (T4, T6, T8, T10) | Done |
-| TEST-02 | P1: Testes obrigatórios | Tasks (T36, T40) | Pending |
-| TEST-03 | P1: Testes obrigatórios | Tasks (T31, T32, T40) | Pending |
+| TEST-02 | P1: Testes obrigatórios | Tasks (T36, T40) | Done |
+| TEST-03 | P1: Testes obrigatórios | Tasks (T31, T32, T40) | Done |
 | TEST-04 | P1: Testes obrigatórios | Tasks (T15, T34) | Done |
 | TEST-05 | P1: Testes obrigatórios | Tasks (T1, T2, T13) | Done |
 | DOC-01 | P2: Ambiente e documentação | Tasks (T2, T35, T43) | Pending |
