@@ -24,6 +24,8 @@ export interface TransactionRepository {
   hasProcessedReversal(referenceTransactionId: string): Promise<boolean>;
   insert(transaction: WagerTransaction): Promise<void>;
   save(transaction: WagerTransaction): Promise<void>;
+  /** PENDING_REFERENCE transactions whose retry time has come, oldest first. Reads only: nothing is locked. */
+  findDuePending(now: Date, limit: number): Promise<{ readonly id: string; readonly walletId: string; readonly kind: string }[]>;
 }
 
 export interface LedgerRepository {
@@ -52,6 +54,14 @@ export interface InboxRepository {
 
 export interface OutboxRepository {
   enqueue(message: OutboxMessage): Promise<void>;
+  /**
+   * Claims up to `limit` pending messages that are due and not under a live lease, for `leaseMs`. Concurrent claimers
+   * skip rows another one holds (`FOR UPDATE SKIP LOCKED`), so no two publishers get the same message. The claim only
+   * writes `locked_until`; the caller commits it before any network call.
+   */
+  claimDue(now: Date, limit: number, leaseMs: number): Promise<OutboxMessage[]>;
+  /** Persists the publication result of a claimed message (published, or retry scheduled). */
+  save(message: OutboxMessage): Promise<void>;
 }
 
 /** Everything that takes part in one SQL transaction. */
