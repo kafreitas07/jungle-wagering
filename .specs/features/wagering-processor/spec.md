@@ -519,7 +519,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | IDEM-05 | P1: Idempotência persistente | Tasks (T22, T30) | Done |
 | IDEM-06 | P1: Idempotência persistente | Tasks (T31) | Done |
 | IDEM-07 | P1: Idempotência persistente | Tasks (T10) | Done |
-| IDEM-08 | P1: Idempotência persistente | Tasks (T42) | Pending |
+| IDEM-08 | P1: Idempotência persistente | Tasks (T42) | Done |
 | CONC-01 | P1: Concorrência | Tasks (T31) | Done |
 | CONC-02 | P1: Concorrência | Tasks (T18, T21, T31) | Done |
 | CONC-03 | P1: Concorrência | Tasks (T21, T31) | Done |
@@ -567,13 +567,13 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | API-01 | P1: Contrato de erros HTTP | Tasks (T27) | Done |
 | API-02 | P1: Contrato de erros HTTP | Tasks (T27) | Done |
 | API-03 | P1: Contrato de erros HTTP | Tasks (T27) | Done |
-| OBS-01 | P1: Observabilidade e health | Tasks (T41) | Pending |
-| OBS-02 | P1: Observabilidade e health | Tasks (T41) | Pending |
-| OBS-03 | P1: Observabilidade e health | Tasks (T41) | Pending |
-| OBS-04 | P1: Observabilidade e health | Tasks (T42) | Pending |
+| OBS-01 | P1: Observabilidade e health | Tasks (T41) | Done |
+| OBS-02 | P1: Observabilidade e health | Tasks (T41) | Done |
+| OBS-03 | P1: Observabilidade e health | Tasks (T41) | Done |
+| OBS-04 | P1: Observabilidade e health | Tasks (T42) | Done |
 | OBS-05 | P1: Observabilidade e health | Tasks (T26) | Done |
 | OBS-06 | P1: Observabilidade e health | Tasks (T26) | Done |
-| OBS-07 | P1: Observabilidade e health | Tasks (T26, T42) | Pending |
+| OBS-07 | P1: Observabilidade e health | Tasks (T26, T42) | Done |
 | AUTH-01 | P1: Extensão de autenticação | Tasks (T28, T29) | Done |
 | AUTH-02 | P1: Extensão de autenticação | Tasks (T28, T30) | Done |
 | AUTH-03 | P1: Extensão de autenticação | Tasks (T46) | Pending |

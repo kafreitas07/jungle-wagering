@@ -1035,10 +1035,10 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Logs são JSON e carregam os ids aplicáveis
-- [ ] Nenhum log contém `amount`, saldos, `playerId` nem payload (teste inspeciona a saída)
-- [ ] `X-Correlation-Id` recebido é propagado; ausente gera UUID; SQS usa `messageId`
-- [ ] Gate rápido passa; ≥ 6 testes
+- [x] Logs são JSON e carregam os ids aplicáveis
+- [x] Nenhum log contém `amount`, saldos, `playerId` nem payload (teste inspeciona a saída)
+- [x] `X-Correlation-Id` recebido é propagado; ausente gera UUID; SQS usa `messageId`
+- [x] Gate rápido passa; ≥ 6 testes
 
 **Tests**: unit
 **Gate**: quick
@@ -1056,10 +1056,10 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] `/metrics` lista todas as métricas do spec com os labels corretos
-- [ ] Replay, conflito e duplicata de inbox incrementam seus contadores
-- [ ] `outbox_pending`, `outbox_lag_seconds` e `outbox_messages_high_attempts` refletem o banco
-- [ ] `/metrics` responde sem autenticação; gate completo; ≥ 6 testes
+- [x] `/metrics` lista todas as métricas do spec com os labels corretos
+- [x] Replay, conflito e duplicata de inbox incrementam seus contadores
+- [x] `outbox_pending`, `outbox_lag_seconds` e `outbox_messages_high_attempts` refletem o banco
+- [x] `/metrics` responde sem autenticação; gate completo; ≥ 6 testes
 
 **Tests**: integration
 **Gate**: full
