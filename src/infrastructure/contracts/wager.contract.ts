@@ -50,7 +50,7 @@ export type SubmitWagerTransactionInput = z.infer<typeof submitWagerTransactionS
 
 /** Message of `wager-transactions.fifo`. The idempotency key travels in the data. */
 export const wagerTransactionRequestedSchema = z.object({
-  messageId: text,
+  messageId: identifier,
   type: z.literal('WagerTransactionRequested'),
   occurredAt: z.iso.datetime(),
   data: z.object({ ...payloadFields, idempotencyKey: identifier }).superRefine(applyBusinessRules),

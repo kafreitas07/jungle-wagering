@@ -196,6 +196,16 @@ describe('identifier length limit (255 characters)', () => {
     },
   );
 
+  test('SQS messageId: 255 accepted, 256 rejected (it becomes the inbox primary key)', () => {
+    const withMessageId = (messageId: string) => ({ ...message, messageId });
+
+    expect(wagerTransactionRequestedSchema.safeParse(withMessageId(`m${'a'.repeat(254)}`)).success).toBe(true);
+
+    const result = wagerTransactionRequestedSchema.safeParse(withMessageId('a'.repeat(256)));
+    expect(result.success).toBe(false);
+    expect(paths(result)).toContain('messageId');
+  });
+
   test('SQS data.referenceExternalTransactionId: 255 accepted, 256 rejected', () => {
     const refund = { ...message, data: { ...message.data, kind: 'REFUND' as const } };
     const withReference = (value: string) => ({ ...refund, data: { ...refund.data, referenceExternalTransactionId: value } });
