@@ -1,0 +1,53 @@
+import type { WalletLedgerEntry } from '../../domain/ledger/wallet-ledger-entry';
+import type { InboxMessage } from '../../domain/messaging/inbox-message';
+import type { OutboxMessage } from '../../domain/messaging/outbox-message';
+import type { Wallet } from '../../domain/wallet/wallet';
+import type { WagerTransaction } from '../../domain/wager/wager-transaction';
+
+export interface WalletRepository {
+  /** `SELECT … FOR UPDATE`: serializes every balance change of this wallet. `null` if it does not exist. */
+  lockById(id: string): Promise<Wallet | null>;
+  insert(wallet: Wallet): Promise<void>;
+  /** `UPDATE … WHERE id = :id AND version = :expectedVersion`; throws an optimistic-lock error on 0 rows. */
+  save(wallet: Wallet, expectedVersion: number): Promise<void>;
+}
+
+export interface TransactionRepository {
+  findById(id: string): Promise<WagerTransaction | null>;
+  findByIdempotencyKey(providerId: string, idempotencyKey: string): Promise<WagerTransaction | null>;
+  /** Also resolves a reference: `(providerId, referenceExternalTransactionId)`. */
+  findByExternalId(providerId: string, externalTransactionId: string): Promise<WagerTransaction | null>;
+  /** A PROCESSED REFUND or ROLLBACK already points at this transaction. */
+  hasProcessedReversal(referenceTransactionId: string): Promise<boolean>;
+  insert(transaction: WagerTransaction): Promise<void>;
+  save(transaction: WagerTransaction): Promise<void>;
+}
+
+export interface LedgerRepository {
+  append(entry: WalletLedgerEntry): Promise<void>;
+}
+
+/** `recorded`: first time. `duplicate`: same message, same payload. `conflict`: same message id, different payload. */
+export type InboxRecordResult = 'recorded' | 'duplicate' | 'conflict';
+
+export interface InboxRepository {
+  tryRecord(message: InboxMessage): Promise<InboxRecordResult>;
+}
+
+export interface OutboxRepository {
+  enqueue(message: OutboxMessage): Promise<void>;
+}
+
+/** Everything that takes part in one SQL transaction. */
+export interface TxRepositories {
+  readonly wallets: WalletRepository;
+  readonly transactions: TransactionRepository;
+  readonly ledger: LedgerRepository;
+  readonly inbox: InboxRepository;
+  readonly outbox: OutboxRepository;
+}
+
+export interface UnitOfWork {
+  /** Runs `work` in one SQL transaction: commits when it resolves, rolls everything back when it throws. */
+  run<T>(work: (tx: TxRepositories) => Promise<T>): Promise<T>;
+}
