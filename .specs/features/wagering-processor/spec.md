@@ -463,137 +463,137 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| MON-01 | P1: Money exato | Design | Pending |
-| MON-02 | P1: Money exato | Design | Pending |
-| MON-03 | P1: Money exato | Design | Pending |
-| MON-04 | P1: Money exato | Design | Pending |
-| MON-05 | P1: Money exato | Design | Pending |
-| MON-06 | P1: Money exato | Design | Pending |
-| MON-07 | P1: Money exato | Design | Pending |
-| MON-08 | P1: Money exato | Design | Pending |
-| MON-09 | P1: Money exato | Design | Pending |
-| WAL-01 | P1: Wallet e abertura | Design | Pending |
-| WAL-02 | P1: Wallet e abertura | Design | Pending |
-| WAL-03 | P1: Wallet e abertura | Design | Pending |
-| WAL-04 | P1: Wallet e abertura | Design | Pending |
-| WAL-05 | P1: Wallet e abertura | Design | Pending |
-| WAL-06 | P1: Wallet e abertura | Design | Pending |
-| WAL-07 | P1: Wallet e abertura | Design | Pending |
-| WAL-08 | P1: Wallet e abertura | Design | Pending |
-| WAL-09 | P1: Wallet e abertura | Design | Pending |
-| TXN-01 | P1: Submissão de transações | Design | Pending |
-| TXN-02 | P1: Submissão de transações | Design | Pending |
-| TXN-03 | P1: Submissão de transações | Design | Pending |
-| TXN-04 | P1: Submissão de transações | Design | Pending |
-| TXN-05 | P1: Submissão de transações | Design | Pending |
-| TXN-06 | P1: Submissão de transações | Design | Pending |
-| TXN-07 | P1: Submissão de transações | Design | Pending |
-| TXN-08 | P1: Submissão de transações | Design | Pending |
-| TXN-09 | P1: Submissão de transações | Design | Pending |
-| TXN-10 | P1: Submissão de transações | Design | Pending |
-| TXN-11 | P1: Submissão de transações | Design | Pending |
-| TXN-12 | P1: Submissão de transações | Design | Pending |
-| TXN-13 | P1: Submissão de transações | Design | Pending |
-| TXN-14 | P1: Submissão de transações | Design | Pending |
-| REV-01 | P1: Reversões e referências | Design | Pending |
-| REV-02 | P1: Reversões e referências | Design | Pending |
-| REV-03 | P1: Reversões e referências | Design | Pending |
-| REV-04 | P1: Reversões e referências | Design | Pending |
-| REV-05 | P1: Reversões e referências | Design | Pending |
-| REV-06 | P1: Reversões e referências | Design | Pending |
-| REV-07 | P1: Reversões e referências | Design | Pending |
-| REV-08 | P1: Reversões e referências | Design | Pending |
-| REV-09 | P1: Reversões e referências | Design | Pending |
-| REV-10 | P1: Reversões e referências | Design | Pending |
-| PREF-01 | P1: Referências fora de ordem | Design | Pending |
-| PREF-02 | P1: Referências fora de ordem | Design | Pending |
-| PREF-03 | P1: Referências fora de ordem | Design | Pending |
-| PREF-04 | P1: Referências fora de ordem | Design | Pending |
-| PREF-05 | P1: Referências fora de ordem | Design | Pending |
-| PREF-06 | P1: Referências fora de ordem | Design | Pending |
-| IDEM-01 | P1: Idempotência persistente | Design | Pending |
-| IDEM-02 | P1: Idempotência persistente | Design | Pending |
-| IDEM-03 | P1: Idempotência persistente | Design | Pending |
-| IDEM-04 | P1: Idempotência persistente | Design | Pending |
-| IDEM-05 | P1: Idempotência persistente | Design | Pending |
-| IDEM-06 | P1: Idempotência persistente | Design | Pending |
-| IDEM-07 | P1: Idempotência persistente | Design | Pending |
-| IDEM-08 | P1: Idempotência persistente | Design | Pending |
-| CONC-01 | P1: Concorrência | Design | Pending |
-| CONC-02 | P1: Concorrência | Design | Pending |
-| CONC-03 | P1: Concorrência | Design | Pending |
-| CONC-04 | P1: Concorrência | Design | Pending |
-| CONC-05 | P1: Concorrência | Design | Pending |
-| CONC-06 | P1: Concorrência | Design | Pending |
-| CONC-07 | P1: Concorrência | Design | Pending |
-| CONC-08 | P1: Concorrência | Design | Pending |
-| LEDG-01 | P1: Ledger imutável | Design | Pending |
-| LEDG-02 | P1: Ledger imutável | Design | Pending |
-| LEDG-03 | P1: Ledger imutável | Design | Pending |
-| LEDG-04 | P1: Ledger imutável | Design | Pending |
-| LEDG-05 | P1: Ledger imutável | Design | Pending |
-| LEDG-06 | P1: Ledger imutável | Design | Pending |
-| LEDG-07 | P1: Ledger imutável | Design | Pending |
-| SQS-01 | P1: Consumo SQS com inbox | Design | Pending |
-| SQS-02 | P1: Consumo SQS com inbox | Design | Pending |
-| SQS-03 | P1: Consumo SQS com inbox | Design | Pending |
-| SQS-04 | P1: Consumo SQS com inbox | Design | Pending |
-| SQS-05 | P1: Consumo SQS com inbox | Design | Pending |
-| SQS-06 | P1: Consumo SQS com inbox | Design | Pending |
-| SQS-07 | P1: Consumo SQS com inbox | Design | Pending |
-| SQS-08 | P1: Consumo SQS com inbox | Design | Pending |
-| SQS-09 | P1: Consumo SQS com inbox | Design | Pending |
-| SQS-10 | P1: Consumo SQS com inbox | Design | Pending |
-| SQS-11 | P1: Consumo SQS com inbox | Design | Pending |
-| SQS-12 | P1: Consumo SQS com inbox | Design | Pending |
-| SQS-13 | P1: Consumo SQS com inbox | Design | Pending |
-| OUT-01 | P1: Transactional outbox | Design | Pending |
-| OUT-02 | P1: Transactional outbox | Design | Pending |
-| OUT-03 | P1: Transactional outbox | Design | Pending |
-| OUT-04 | P1: Transactional outbox | Design | Pending |
-| OUT-05 | P1: Transactional outbox | Design | Pending |
-| OUT-06 | P1: Transactional outbox | Design | Pending |
-| OUT-07 | P1: Transactional outbox | Design | Pending |
-| OUT-08 | P1: Transactional outbox | Design | Pending |
-| OUT-09 | P1: Transactional outbox | Design | Pending |
-| OUT-10 | P1: Transactional outbox | Design | Pending |
-| OUT-11 | P1: Transactional outbox | Design | Pending |
-| OUT-12 | P1: Transactional outbox | Design | Pending |
-| REC-01 | P1: Reconciliação | Design | Pending |
-| REC-02 | P1: Reconciliação | Design | Pending |
-| REC-03 | P1: Reconciliação | Design | Pending |
-| REC-04 | P1: Reconciliação | Design | Pending |
-| API-01 | P1: Contrato de erros HTTP | Design | Pending |
-| API-02 | P1: Contrato de erros HTTP | Design | Pending |
-| API-03 | P1: Contrato de erros HTTP | Design | Pending |
-| OBS-01 | P1: Observabilidade e health | Design | Pending |
-| OBS-02 | P1: Observabilidade e health | Design | Pending |
-| OBS-03 | P1: Observabilidade e health | Design | Pending |
-| OBS-04 | P1: Observabilidade e health | Design | Pending |
-| OBS-05 | P1: Observabilidade e health | Design | Pending |
-| OBS-06 | P1: Observabilidade e health | Design | Pending |
-| OBS-07 | P1: Observabilidade e health | Design | Pending |
-| AUTH-01 | P1: Extensão de autenticação | Design | Pending |
-| AUTH-02 | P1: Extensão de autenticação | Design | Pending |
-| AUTH-03 | P1: Extensão de autenticação | Design | Pending |
-| DB-01 | P1: Schema e migrations | Design | Pending |
-| DB-02 | P1: Schema e migrations | Design | Pending |
-| DB-03 | P1: Schema e migrations | Design | Pending |
-| DB-04 | P1: Schema e migrations | Design | Pending |
-| TEST-01 | P1: Testes obrigatórios | Design | Pending |
-| TEST-02 | P1: Testes obrigatórios | Design | Pending |
-| TEST-03 | P1: Testes obrigatórios | Design | Pending |
-| TEST-04 | P1: Testes obrigatórios | Design | Pending |
-| TEST-05 | P1: Testes obrigatórios | Design | Pending |
-| DOC-01 | P2: Ambiente e documentação | Design | Pending |
-| DOC-02 | P2: Ambiente e documentação | Design | Pending |
-| DOC-03 | P2: Ambiente e documentação | Design | Pending |
-| DOC-04 | P2: Ambiente e documentação | Design | Pending |
-| DOC-05 | P2: Ambiente e documentação | Design | Pending |
+| MON-01 | P1: Money exato | Tasks (T4, T16) | Pending |
+| MON-02 | P1: Money exato | Tasks (T4) | Pending |
+| MON-03 | P1: Money exato | Tasks (T4) | Pending |
+| MON-04 | P1: Money exato | Tasks (T4) | Pending |
+| MON-05 | P1: Money exato | Tasks (T4) | Pending |
+| MON-06 | P1: Money exato | Tasks (T4) | Pending |
+| MON-07 | P1: Money exato | Tasks (T4) | Pending |
+| MON-08 | P1: Money exato | Tasks (T11) | Pending |
+| MON-09 | P1: Money exato | Tasks (T4) | Pending |
+| WAL-01 | P1: Wallet e abertura | Tasks (T20, T29) | Pending |
+| WAL-02 | P1: Wallet e abertura | Tasks (T6, T20) | Pending |
+| WAL-03 | P1: Wallet e abertura | Tasks (T6, T20) | Pending |
+| WAL-04 | P1: Wallet e abertura | Tasks (T14, T20, T29) | Pending |
+| WAL-05 | P1: Wallet e abertura | Tasks (T24, T29) | Pending |
+| WAL-06 | P1: Wallet e abertura | Tasks (T24, T29) | Pending |
+| WAL-07 | P1: Wallet e abertura | Tasks (T6, T21) | Pending |
+| WAL-08 | P1: Wallet e abertura | Tasks (T6, T14) | Pending |
+| WAL-09 | P1: Wallet e abertura | Tasks (T6, T14, T21) | Pending |
+| TXN-01 | P1: Submissão de transações | Tasks (T8, T21) | Pending |
+| TXN-02 | P1: Submissão de transações | Tasks (T8, T21) | Pending |
+| TXN-03 | P1: Submissão de transações | Tasks (T8, T21) | Pending |
+| TXN-04 | P1: Submissão de transações | Tasks (T8, T21) | Pending |
+| TXN-05 | P1: Submissão de transações | Tasks (T11, T30) | Pending |
+| TXN-06 | P1: Submissão de transações | Tasks (T11, T14, T30) | Pending |
+| TXN-07 | P1: Submissão de transações | Tasks (T21) | Pending |
+| TXN-08 | P1: Submissão de transações | Tasks (T14, T21) | Pending |
+| TXN-09 | P1: Submissão de transações | Tasks (T14, T21) | Pending |
+| TXN-10 | P1: Submissão de transações | Tasks (T24, T30) | Pending |
+| TXN-11 | P1: Submissão de transações | Tasks (T7, T14) | Pending |
+| TXN-12 | P1: Submissão de transações | Tasks (T7) | Pending |
+| TXN-13 | P1: Submissão de transações | Tasks (T11, T30) | Pending |
+| TXN-14 | P1: Submissão de transações | Tasks (T11, T30) | Pending |
+| REV-01 | P1: Reversões e referências | Tasks (T21) | Pending |
+| REV-02 | P1: Reversões e referências | Tasks (T8, T21) | Pending |
+| REV-03 | P1: Reversões e referências | Tasks (T8, T21) | Pending |
+| REV-04 | P1: Reversões e referências | Tasks (T8, T21) | Pending |
+| REV-05 | P1: Reversões e referências | Tasks (T8, T21) | Pending |
+| REV-06 | P1: Reversões e referências | Tasks (T8, T21) | Pending |
+| REV-07 | P1: Reversões e referências | Tasks (T8, T21) | Pending |
+| REV-08 | P1: Reversões e referências | Tasks (T8, T14, T21, T31) | Pending |
+| REV-09 | P1: Reversões e referências | Tasks (T8, T21) | Pending |
+| REV-10 | P1: Reversões e referências | Tasks (T8, T21) | Pending |
+| PREF-01 | P1: Referências fora de ordem | Tasks (T8, T21) | Pending |
+| PREF-02 | P1: Referências fora de ordem | Tasks (T7, T39) | Pending |
+| PREF-03 | P1: Referências fora de ordem | Tasks (T39, T40) | Pending |
+| PREF-04 | P1: Referências fora de ordem | Tasks (T39) | Pending |
+| PREF-05 | P1: Referências fora de ordem | Tasks (T39) | Pending |
+| PREF-06 | P1: Referências fora de ordem | Tasks (T39) | Pending |
+| IDEM-01 | P1: Idempotência persistente | Tasks (T30) | Pending |
+| IDEM-02 | P1: Idempotência persistente | Tasks (T14, T22) | Pending |
+| IDEM-03 | P1: Idempotência persistente | Tasks (T22, T30) | Pending |
+| IDEM-04 | P1: Idempotência persistente | Tasks (T22, T30) | Pending |
+| IDEM-05 | P1: Idempotência persistente | Tasks (T22, T30) | Pending |
+| IDEM-06 | P1: Idempotência persistente | Tasks (T31) | Pending |
+| IDEM-07 | P1: Idempotência persistente | Tasks (T10) | Pending |
+| IDEM-08 | P1: Idempotência persistente | Tasks (T42) | Pending |
+| CONC-01 | P1: Concorrência | Tasks (T31) | Pending |
+| CONC-02 | P1: Concorrência | Tasks (T18, T21, T31) | Pending |
+| CONC-03 | P1: Concorrência | Tasks (T21, T31) | Pending |
+| CONC-04 | P1: Concorrência | Tasks (T32) | Pending |
+| CONC-05 | P1: Concorrência | Tasks (T23) | Pending |
+| CONC-06 | P1: Concorrência | Tasks (T18, T21) | Pending |
+| CONC-07 | P1: Concorrência | Tasks (T23) | Pending |
+| CONC-08 | P1: Concorrência | Tasks (T15) | Pending |
+| LEDG-01 | P1: Ledger imutável | Tasks (T19, T20, T21) | Pending |
+| LEDG-02 | P1: Ledger imutável | Tasks (T5, T15) | Pending |
+| LEDG-03 | P1: Ledger imutável | Tasks (T15) | Pending |
+| LEDG-04 | P1: Ledger imutável | Tasks (T15) | Pending |
+| LEDG-05 | P1: Ledger imutável | Tasks (T25, T29) | Pending |
+| LEDG-06 | P1: Ledger imutável | Tasks (T11, T25, T29) | Pending |
+| LEDG-07 | P1: Ledger imutável | Tasks (T5) | Pending |
+| SQS-01 | P1: Consumo SQS com inbox | Tasks (T37) | Pending |
+| SQS-02 | P1: Consumo SQS com inbox | Tasks (T19, T37) | Pending |
+| SQS-03 | P1: Consumo SQS com inbox | Tasks (T37) | Pending |
+| SQS-04 | P1: Consumo SQS com inbox | Tasks (T37) | Pending |
+| SQS-05 | P1: Consumo SQS com inbox | Tasks (T37) | Pending |
+| SQS-06 | P1: Consumo SQS com inbox | Tasks (T38) | Pending |
+| SQS-07 | P1: Consumo SQS com inbox | Tasks (T38) | Pending |
+| SQS-08 | P1: Consumo SQS com inbox | Tasks (T37) | Pending |
+| SQS-09 | P1: Consumo SQS com inbox | Tasks (T40) | Pending |
+| SQS-10 | P1: Consumo SQS com inbox | Tasks (T38) | Pending |
+| SQS-11 | P1: Consumo SQS com inbox | Tasks (T37) | Pending |
+| SQS-12 | P1: Consumo SQS com inbox | Tasks (T37) | Pending |
+| SQS-13 | P1: Consumo SQS com inbox | Tasks (T37) | Pending |
+| OUT-01 | P1: Transactional outbox | Tasks (T19, T21) | Pending |
+| OUT-02 | P1: Transactional outbox | Tasks (T36) | Pending |
+| OUT-03 | P1: Transactional outbox | Tasks (T20, T21) | Pending |
+| OUT-04 | P1: Transactional outbox | Tasks (T20, T21) | Pending |
+| OUT-05 | P1: Transactional outbox | Tasks (T21) | Pending |
+| OUT-06 | P1: Transactional outbox | Tasks (T21) | Pending |
+| OUT-07 | P1: Transactional outbox | Tasks (T9) | Pending |
+| OUT-08 | P1: Transactional outbox | Tasks (T36) | Pending |
+| OUT-09 | P1: Transactional outbox | Tasks (T36, T40) | Pending |
+| OUT-10 | P1: Transactional outbox | Tasks (T36) | Pending |
+| OUT-11 | P1: Transactional outbox | Tasks (T36) | Pending |
+| OUT-12 | P1: Transactional outbox | Tasks (T36) | Pending |
+| REC-01 | P1: Reconciliação | Tasks (T33) | Pending |
+| REC-02 | P1: Reconciliação | Tasks (T33) | Pending |
+| REC-03 | P1: Reconciliação | Tasks (T33) | Pending |
+| REC-04 | P1: Reconciliação | Tasks (T34) | Pending |
+| API-01 | P1: Contrato de erros HTTP | Tasks (T27) | Pending |
+| API-02 | P1: Contrato de erros HTTP | Tasks (T27) | Pending |
+| API-03 | P1: Contrato de erros HTTP | Tasks (T27) | Pending |
+| OBS-01 | P1: Observabilidade e health | Tasks (T41) | Pending |
+| OBS-02 | P1: Observabilidade e health | Tasks (T41) | Pending |
+| OBS-03 | P1: Observabilidade e health | Tasks (T41) | Pending |
+| OBS-04 | P1: Observabilidade e health | Tasks (T42) | Pending |
+| OBS-05 | P1: Observabilidade e health | Tasks (T26) | Pending |
+| OBS-06 | P1: Observabilidade e health | Tasks (T26) | Pending |
+| OBS-07 | P1: Observabilidade e health | Tasks (T26, T42) | Pending |
+| AUTH-01 | P1: Extensão de autenticação | Tasks (T28, T29) | Pending |
+| AUTH-02 | P1: Extensão de autenticação | Tasks (T28, T30) | Pending |
+| AUTH-03 | P1: Extensão de autenticação | Tasks (T46) | Pending |
+| DB-01 | P1: Schema e migrations | Tasks (T13, T15) | Pending |
+| DB-02 | P1: Schema e migrations | Tasks (T14, T15) | Pending |
+| DB-03 | P1: Schema e migrations | Tasks (T16, T17) | Pending |
+| DB-04 | P1: Schema e migrations | Tasks (T16, T17) | Pending |
+| TEST-01 | P1: Testes obrigatórios | Tasks (T4, T6, T8, T10) | Pending |
+| TEST-02 | P1: Testes obrigatórios | Tasks (T36, T40) | Pending |
+| TEST-03 | P1: Testes obrigatórios | Tasks (T31, T32, T40) | Pending |
+| TEST-04 | P1: Testes obrigatórios | Tasks (T15, T34) | Pending |
+| TEST-05 | P1: Testes obrigatórios | Tasks (T1, T2, T13) | Pending |
+| DOC-01 | P2: Ambiente e documentação | Tasks (T2, T35, T43) | Pending |
+| DOC-02 | P2: Ambiente e documentação | Tasks (T43) | Pending |
+| DOC-03 | P2: Ambiente e documentação | Tasks (T45) | Pending |
+| DOC-04 | P2: Ambiente e documentação | Tasks (T46) | Pending |
+| DOC-05 | P2: Ambiente e documentação | Tasks (T1) | Pending |
 
 IDs individuais = prefixo + número do critério na story (ex.: `REV-08` = critério 8 de Reversões).
 
-**Coverage:** 127 critérios, 0 mapeados para tasks (fase Tasks ainda não executada).
+**Coverage:** 127 critérios, 127 mapeados para tasks (ver `tasks.md`).
 
 ---
 
