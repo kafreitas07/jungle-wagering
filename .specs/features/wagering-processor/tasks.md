@@ -172,10 +172,10 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] `bun run test:unit`, `test:integration`, `test:concurrency` e `test` existem; `test` executa os três em sequência
-- [ ] `zod`, `pino`, `prom-client` em `dependencies` com versão fixada pelo `bun.lock`
-- [ ] `git check-ignore instrucoes-teste.md CLAUDE.md .claude .env` imprime os quatro; `.env.example` não é ignorado; `.specs/` não é ignorada
-- [ ] Gate de build passa: `bun run typecheck`
+- [x] `bun run test:unit`, `test:integration`, `test:concurrency` e `test` existem; `test` executa os três em sequência
+- [x] `zod`, `pino`, `prom-client` em `dependencies` com versão fixada pelo `bun.lock`
+- [x] `git check-ignore instrucoes-teste.md CLAUDE.md .claude .env` imprime os quatro; `.env.example` não é ignorado; `.specs/` não é ignorada
+- [x] Gate de build passa: `bun run typecheck`
 
 **Tests**: none
 **Gate**: build
@@ -193,9 +193,9 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Nenhuma imagem usa `:latest`; versões exatas de PostgreSQL e LocalStack no compose
-- [ ] Em volume limpo (`docker compose down -v && up -d --wait postgres localstack`), `psql -l` lista `wagering` e `wagering_test`
-- [ ] `docker compose config` valida sem erro
+- [x] Nenhuma imagem usa `:latest`; versões exatas de PostgreSQL e LocalStack no compose
+- [x] Em volume limpo (`docker compose down -v && up -d --wait postgres localstack`), `psql -l` lista `wagering` e `wagering_test`
+- [x] `docker compose config` valida sem erro
 
 **Tests**: none
 **Gate**: build
@@ -213,10 +213,10 @@ Prazo: 06/11/2026, 13h (Brasília). Se o tempo apertar:
 
 **Done when**:
 
-- [ ] Valores padrão do design (pool 20, `lock_timeout` 2 s, 10 tentativas, base 1 s, teto 5 min) aplicados quando a variável falta
-- [ ] Variável inválida (ex.: `RUN_HTTP=maybe`, número negativo) falha na carga com mensagem que nomeia a variável
-- [ ] Os quatro runners são `true` por padrão e desligáveis individualmente
-- [ ] Gate rápido passa; ≥ 6 testes unitários
+- [x] Valores padrão do design (pool 20, `lock_timeout` 2 s, 10 tentativas, base 1 s, teto 5 min) aplicados quando a variável falta
+- [x] Variável inválida (ex.: `RUN_HTTP=maybe`, número negativo) falha na carga com mensagem que nomeia a variável
+- [x] Os quatro runners são `true` por padrão e desligáveis individualmente
+- [x] Gate rápido passa; ≥ 6 testes unitários
 
 **Tests**: unit
 **Gate**: quick

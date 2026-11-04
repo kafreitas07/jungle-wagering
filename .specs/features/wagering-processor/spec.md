@@ -589,7 +589,7 @@ Provedores de jogos enviam operações de aposta (`BET`, `WIN`, `LOSS`, `REFUND`
 | DOC-02 | P2: Ambiente e documentação | Tasks (T43) | Pending |
 | DOC-03 | P2: Ambiente e documentação | Tasks (T45) | Pending |
 | DOC-04 | P2: Ambiente e documentação | Tasks (T46) | Pending |
-| DOC-05 | P2: Ambiente e documentação | Tasks (T1) | Pending |
+| DOC-05 | P2: Ambiente e documentação | Tasks (T1) | Done |
 
 IDs individuais = prefixo + número do critério na story (ex.: `REV-08` = critério 8 de Reversões).
 
